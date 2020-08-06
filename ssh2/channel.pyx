@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or

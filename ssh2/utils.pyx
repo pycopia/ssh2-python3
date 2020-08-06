@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017-2018 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -16,8 +17,6 @@
 
 from select import select
 
-from cpython.version cimport PY_MAJOR_VERSION
-
 from session cimport Session
 import exceptions
 cimport c_ssh2
@@ -30,21 +29,15 @@ ENCODING='utf-8'
 cdef bytes to_bytes(_str):
     if isinstance(_str, bytes):
         return _str
-    elif isinstance(_str, unicode):
-        return _str.encode(ENCODING)
-    return _str
+    return _str.encode(ENCODING)
 
 
 cdef object to_str(char *c_str):
     _len = len(c_str)
-    if PY_MAJOR_VERSION < 3:
-        return c_str[:_len]
     return c_str[:_len].decode(ENCODING)
 
 
 cdef object to_str_len(char *c_str, int length):
-    if PY_MAJOR_VERSION < 3:
-        return c_str[:length]
     return c_str[:length].decode(ENCODING)
 
 
