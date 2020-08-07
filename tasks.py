@@ -17,6 +17,7 @@ from glob import glob
 import keyring
 from invoke import task, run, Exit
 
+# local user: pypi user
 SIGNERS = {"keithdart": "kdart"}
 
 PYTHONBIN = os.environ.get("PYTHONBIN", sys.executable)
@@ -44,21 +45,6 @@ def info(ctx):
     print(f"Python being used: {PYTHONBIN}")
     print(f"Python extension suffix: {suffix}")
     print(f"repo URL: {REPOSITORY_URL} User: {REPO_USERNAME}")
-
-
-@task
-def set_repo_password(ctx):
-    """Set the password in the local key ring for the Artifactory account used as the package repo.
-    """
-    pw = getpass.getpass(f"Password for {REPO_USERNAME} account on {REPO_HOST}? ")
-    if pw:
-        repeat_pw = getpass.getpass("Please repeat it: ")
-        if repeat_pw == pw:
-            keyring.set_password(REPO_HOST, REPO_USERNAME, pw)
-        else:
-            raise Exit("Passwords did not match!", 2)
-    else:
-        raise Exit("No password entered.", 3)
 
 
 @task
@@ -134,8 +120,8 @@ def bdist(ctx):
 def sign(ctx):
     """Cryptographically sign dist with your default GPG key."""
     if CURRENT_USER in SIGNERS:
-        ctx.run(f"{GPG} --detach-sign -a dist/ssh2-*.whl")
-        ctx.run(f"{GPG} --detach-sign -a dist/ssh2-*.tar.gz")
+        ctx.run(f"{GPG} --detach-sign -a dist/ssh2_python3-*.whl")
+        ctx.run(f"{GPG} --detach-sign -a dist/ssh2-python3-*.tar.gz")
     else:
         print("Not signing.")
 
@@ -181,6 +167,21 @@ def branch_delete(ctx, name=None):
         ctx.run(f"git push origin --delete {name}", warn=True)  # delete remote (origin) branch.
     else:
         print("Supply a branch name: --name <name>")
+
+
+@task
+def set_repo_password(ctx):
+    """Set the password in the local key ring for the Artifactory account used as the package repo.
+    """
+    pw = getpass.getpass(f"Password for {REPO_USERNAME} account on {REPO_HOST}? ")
+    if pw:
+        repeat_pw = getpass.getpass("Please repeat it: ")
+        if repeat_pw == pw:
+            keyring.set_password(REPO_HOST, REPO_USERNAME, pw)
+        else:
+            raise Exit("Passwords did not match!", 2)
+    else:
+        raise Exit("No password entered.", 3)
 
 
 def get_repo_password():

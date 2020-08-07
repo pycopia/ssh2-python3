@@ -10,8 +10,6 @@ from _setup_libssh2 import build_ssh2
 import versioneer
 from setuptools import setup, find_packages
 
-cpython = platform.python_implementation() == 'CPython'
-
 from Cython.Distutils.extension import Extension
 from Cython.Distutils import build_ext
 
@@ -43,11 +41,12 @@ _comp_args = ["-O3"] if not ON_WINDOWS else None
 _embedded_lib = bool(int(os.environ.get('EMBEDDED_LIB', 1)))
 _have_agent_fwd = bool(int(os.environ.get('HAVE_AGENT_FWD', _fwd_default)))
 
-cython_directives = {'embedsignature': True,
-                     'boundscheck': False,
-                     'optimize.use_switch': True,
-                     'wraparound': False,
-                     'language_level': "3",
+cython_directives = {
+    'embedsignature': True,
+    'boundscheck': False,
+    'optimize.use_switch': True,
+    'wraparound': False,
+    'language_level': "3",
 }
 
 cython_args = {
@@ -56,7 +55,8 @@ cython_args = {
     'cython_compile_time_env': {
         'EMBEDDED_LIB': _embedded_lib,
         'HAVE_AGENT_FWD': _have_agent_fwd,
-}}
+    }
+}
 
 
 runtime_library_dirs = ["$ORIGIN/."] if not SYSTEM_LIBSSH2 else None
@@ -71,8 +71,7 @@ extensions = [
               library_dirs=[_lib_dir],
               runtime_library_dirs=runtime_library_dirs,
               extra_compile_args=_comp_args,
-              **cython_args
-    )
+              **cython_args)
     for i in range(len(sources))]
 
 package_data = {'ssh2': ['*.pxd', 'libssh2.so*']}
@@ -86,9 +85,10 @@ cmdclass = versioneer.get_cmdclass()
 cmdclass['build_ext'] = build_ext
 
 setup(
-    name='ssh2-python',
+    name='ssh2-python3',
     version=versioneer.get_version(),
     cmdclass=cmdclass,
+    tests_require=['pytest'],
     url='https://github.com/ParallelSSH/ssh2-python',
     license='LGPLv2',
     author='Panos Kittenis',
@@ -110,6 +110,7 @@ setup(
         'Programming Language :: C',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
+        "Programming Language :: Python :: 3 :: Only",
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
