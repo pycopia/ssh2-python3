@@ -7,3 +7,4 @@ build
 .idea/
 ssh2/libssh2.so*
 ssh2/*.c
+src/

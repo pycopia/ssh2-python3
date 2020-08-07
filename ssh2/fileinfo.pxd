@@ -1,4 +1,4 @@
-cimport c_ssh2
+from ssh2 cimport c_ssh2
 
 IF EMBEDDED_LIB:
     cdef class FileInfo:

@@ -19,7 +19,7 @@
 
 from libc.stdlib cimport malloc, free
 
-cimport c_ssh2
+from ssh2 cimport c_ssh2
 
 
 IF EMBEDDED_LIB:

@@ -17,7 +17,7 @@ from glob import glob
 import keyring
 from invoke import task, run, Exit
 
-SIGNERS = {"keithdart", "kdart"}
+SIGNERS = {"keithdart": "kdart"}
 
 PYTHONBIN = os.environ.get("PYTHONBIN", sys.executable)
 # Put the path in quotes in case there is a space in it.
@@ -89,7 +89,7 @@ def clean(ctx):
     ctx.run(f"{PYTHONBIN} setup.py clean")
     ctx.run(r"find . -depth -type d -name __pycache__ -exec rm -rf {} \;")
     ctx.run('find ssh2 -name "*.so" -delete')
-    with ctx.cd("docs"):
+    with ctx.cd("doc"):
         ctx.run(f"{PYTHONBIN} -m sphinx.cmd.build -M clean . _build")
 
 
@@ -156,7 +156,7 @@ def publish(ctx):
 @task
 def docs(ctx):
     """Build the HTML documentation."""
-    with ctx.cd("docs"):
+    with ctx.cd("doc"):
         ctx.run(f"{PYTHONBIN} -m sphinx.cmd.build -M html . _build")
     if os.environ.get("DISPLAY"):
         ctx.run("xdg-open docs/_build/html/index.html")

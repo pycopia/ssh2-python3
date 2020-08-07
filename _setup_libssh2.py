@@ -20,6 +20,7 @@ def build_ssh2():
     os.chdir('src')
     check_call('cmake ../libssh2 -DBUILD_SHARED_LIBS=ON \
     -DENABLE_ZLIB_COMPRESSION=ON -DENABLE_CRYPT_NONE=ON \
+    -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF \
     -DENABLE_MAC_NONE=ON -DCRYPTO_BACKEND=OpenSSL',
                shell=True, env=os.environ)
     check_call('cmake --build . --config Release', shell=True, env=os.environ)

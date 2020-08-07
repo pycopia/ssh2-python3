@@ -75,13 +75,13 @@ ___________________
 
 from libc.stdlib cimport malloc, free
 
-from session cimport Session
-from channel cimport Channel, PyChannel
-from utils cimport to_bytes, to_str_len, handle_error_codes
-from sftp_handle cimport SFTPHandle, PySFTPHandle, SFTPAttributes, SFTPStatVFS
+from ssh2.session cimport Session
+from ssh2.channel cimport Channel, PyChannel
+from ssh2.utils cimport to_bytes, to_str_len, handle_error_codes
+from ssh2.sftp_handle cimport SFTPHandle, PySFTPHandle, SFTPAttributes, SFTPStatVFS
 
-cimport c_ssh2
-cimport c_sftp
+from ssh2 cimport c_ssh2
+from ssh2 cimport c_sftp
 
 
 # File types

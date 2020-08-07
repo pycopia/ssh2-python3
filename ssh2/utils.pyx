@@ -17,10 +17,10 @@
 
 from select import select
 
-from session cimport Session
-import exceptions
-cimport c_ssh2
-cimport error_codes
+from ssh2.session cimport Session
+from ssh2 import exceptions
+from ssh2 cimport c_ssh2
+from ssh2 cimport error_codes
 
 
 ENCODING='utf-8'

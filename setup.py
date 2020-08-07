@@ -47,10 +47,11 @@ cython_directives = {'embedsignature': True,
                      'boundscheck': False,
                      'optimize.use_switch': True,
                      'wraparound': False,
-                     'language_level': 3,
+                     'language_level': "3",
 }
 
 cython_args = {
+    'include_path': ["ssh2"],
     'cython_directives': cython_directives,
     'cython_compile_time_env': {
         'EMBEDDED_LIB': _embedded_lib,

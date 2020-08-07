@@ -19,23 +19,22 @@ from cpython cimport PyObject_AsFileDescriptor
 from libc.stdlib cimport malloc, free
 from libc.time cimport time_t
 
-from agent cimport PyAgent, agent_auth, agent_init, init_connect_agent
-from channel cimport PyChannel
-from exceptions import SessionHostKeyError, KnownHostError, \
-    PublicKeyInitError, ChannelError
-from listener cimport PyListener
-from sftp cimport PySFTP
-from publickey cimport PyPublicKeySystem
-from utils cimport to_bytes, to_str, handle_error_codes
-from statinfo cimport StatInfo
-from knownhost cimport PyKnownHost
+from ssh2.agent cimport PyAgent, agent_auth, agent_init, init_connect_agent
+from ssh2.channel cimport PyChannel
+from ssh2.exceptions import SessionHostKeyError, KnownHostError, PublicKeyInitError, ChannelError
+from ssh2.listener cimport PyListener
+from ssh2.sftp cimport PySFTP
+from ssh2.publickey cimport PyPublicKeySystem
+from ssh2.utils cimport to_bytes, to_str, handle_error_codes
+from ssh2.statinfo cimport StatInfo
+from ssh2.knownhost cimport PyKnownHost
 IF EMBEDDED_LIB:
-    from fileinfo cimport FileInfo
+    from ssh2.fileinfo cimport FileInfo
 
 
-cimport c_ssh2
-cimport c_sftp
-cimport c_pkey
+from ssh2 cimport c_ssh2
+from ssh2 cimport c_sftp
+from ssh2 cimport c_pkey
 
 
 LIBSSH2_SESSION_BLOCK_INBOUND = c_ssh2.LIBSSH2_SESSION_BLOCK_INBOUND
@@ -483,28 +482,6 @@ cdef class Session:
                 rc = c_ssh2.libssh2_session_set_last_error(
                     self._session, errcode, _errmsg)
             return rc
-
-    def scp_recv(self, path not None):
-        """Receive file via SCP.
-
-        Deprecated in favour or recv2 (requires libssh2 >= 1.7).
-
-        :param path: File path to receive.
-        :type path: str
-
-        :rtype: tuple(:py:class:`ssh2.channel.Channel`,
-          :py:class:`ssh2.statinfo.StatInfo`) or None"""
-        cdef bytes b_path = to_bytes(path)
-        cdef char *_path = b_path
-        cdef StatInfo statinfo = StatInfo()
-        cdef c_ssh2.LIBSSH2_CHANNEL *channel
-        with nogil:
-            channel = c_ssh2.libssh2_scp_recv(
-                self._session, _path, statinfo._stat)
-        if channel is NULL:
-            return handle_error_codes(c_ssh2.libssh2_session_last_errno(
-                self._session))
-        return PyChannel(channel, self), statinfo
 
     IF EMBEDDED_LIB:
         def scp_recv2(self, path not None):
