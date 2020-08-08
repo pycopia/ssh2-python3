@@ -1,25 +1,11 @@
-ssh2-python
+ssh2-python3
 ============
 
-Super fast SSH2 protocol library. ``ssh2-python`` provides Python bindings for `libssh2`_.
+Super fast SSH2 protocol library. ``ssh2-python3`` provides Python bindings for `libssh2`_.
 
 .. image:: https://img.shields.io/badge/License-LGPL%20v2-blue.svg
-   :target: https://pypi.python.org/pypi/ssh2-python
+   :target: https://pypi.python.org/pypi/ssh2-python3
    :alt: License
-.. image:: https://img.shields.io/pypi/v/ssh2-python.svg
-   :target: https://pypi.python.org/pypi/ssh2-python
-   :alt: Latest Version
-.. image:: https://travis-ci.org/ParallelSSH/ssh2-python.svg?branch=master
-   :target: https://travis-ci.org/ParallelSSH/ssh2-python
-.. image:: https://ci.appveyor.com/api/projects/status/github/parallelssh/ssh2-python?svg=true&branch=master
-   :target: https://ci.appveyor.com/project/pkittenis/ssh2-python
-.. image:: https://img.shields.io/pypi/wheel/ssh2-python.svg
-   :target: https://pypi.python.org/pypi/ssh2-python
-.. image:: https://img.shields.io/pypi/pyversions/ssh2-python.svg
-   :target: https://pypi.python.org/pypi/ssh2-python
-.. image:: https://readthedocs.org/projects/ssh2-python/badge/?version=latest
-  :target: http://ssh2-python.readthedocs.org/en/latest/
-  :alt: Latest documentation
 
 
 Installation
@@ -31,23 +17,25 @@ Binary wheel packages are provided for Linux, OSX and Windows, all Python versio
 
 .. code-block:: shell
 
-   pip install ssh2-python
+   pip install ssh2-python3
 
-`Conda <https://conda.io/miniconda.html>`_ is another installation option - see `documentation <http://ssh2-python.readthedocs.org/en/latest/>`_ for more detailed instructions.
+For from source installation instructions, including building against system provided libssh2,
+`see documentation <https://ssh2-python.readthedocs.io/en/latest/installation.html#installation-from-source>`_.
 
-For from source installation instructions, including building against system provided libssh2, `see documentation <https://ssh2-python.readthedocs.io/en/latest/installation.html#installation-from-source>`_.
-
-For creating native system packages for Centos/RedHat, Ubuntu, Debian and Fedora, see `instructions in the documentation <http://ssh2-python.readthedocs.io/en/latest/installation.html#system-binary-packages>`_.
+For creating native system packages for Centos/RedHat, Ubuntu, Debian and Fedora, see
+`instructions in the documentation <http://ssh2-python.readthedocs.io/en/latest/installation.html#system-binary-packages>`_.
 
 
 API Feature Set
 ________________
 
-At this time all of the `libssh2`_ API has been implemented up to version ``1.8.2``.
+At this time all of the `libssh2`_ API has been implemented up to version ``1.9.0``.
 
 Complete example scripts for various operations can be found in the `examples directory`_.
 
-In addition, as ``ssh2-python`` is a thin wrapper of ``libssh2`` with Python semantics, `its code examples <https://libssh2.org/examples/>`_ can be ported straight over to Python with only minimal changes.
+In addition, as ``ssh2-python3`` is a thin wrapper of ``libssh2`` with Python 3 semantics,
+`its code examples <https://libssh2.org/examples/>`_ can be ported straight over to Python with only minimal
+changes.
 
 
 Library Features
@@ -60,8 +48,10 @@ Extension features:
 * Thread safe - GIL is released as much as possible
 * Very low overhead
 * Super fast as a consequence of the excellent C library it uses and prodigious use of native code
-* Object oriented - memory freed automatically and safely as objects are garbage collected by Python
-* Use Python semantics where applicable, such as context manager and iterator support for opening and reading from SFTP file handles
+* Object oriented - memory freed automatically and safely as objects are garbage collected by
+  Python, and uses Python's memory allocator.
+* Use Python semantics where applicable, such as context manager and iterator support for 
+  opening and reading from SFTP file handles
 * Raise errors as Python exceptions
 * Provide access to ``libssh2`` error code definitions
 
@@ -86,8 +76,6 @@ Connect and get available authentication methods.
 
 
 .. code-block:: python
-
-   from __future__ import print_function
 
    from ssh2.session import Session
 
@@ -155,8 +143,7 @@ Public Key Authentication
 
 .. code-block:: python
 
-   session.userauth_publickey_fromfile(
-       username, 'private_key_file')
+   session.userauth_publickey_fromfile(username, 'private_key_file')
 
 
 Passphrase can be provided with the ``passphrase`` keyword param - see `API documentation <https://ssh2-python.readthedocs.io/en/latest/session.html#ssh2.session.Session.userauth_publickey_fromfile>`_.
@@ -190,15 +177,11 @@ __________________
 
 A simple usage example looks very similar to ``libssh2`` `usage examples <https://www.libssh2.org/examples/>`_.
 
-See `examples directory <https://github.com/ParallelSSH/ssh2-python/tree/master/examples>`_ for more complete example scripts.
-
 As mentioned, ``ssh2-python`` is intentionally a thin wrapper over ``libssh2`` and directly maps most of its API.
 
 Clients using this library can be much simpler to use than interfacing with the ``libssh2`` API directly.
 
 .. code-block:: python
-
-   from __future__ import print_function
 
    import os
    import socket
@@ -278,5 +261,4 @@ Performance of above example, compared with Paramiko.
 
 .. _libssh2: https://www.libssh2.org
 .. _Cython: https://www.cython.org
-.. _`examples directory`: https://github.com/ParallelSSH/ssh2-python/tree/master/examples
 .. _`mail group`: https://groups.google.com/forum/#!forum/ssh2-python
