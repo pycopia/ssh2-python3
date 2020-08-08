@@ -15,73 +15,68 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-"""Available only when built on libssh2 >= ``1.7``"""
-
-from libc.stdlib cimport malloc, free
+from libc.stddef cimport size_t
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
 from ssh2 cimport c_ssh2
 
 
-IF EMBEDDED_LIB:
-    cdef class FileInfo:
-        """Representation of stat structure - libssh2 >= 1.7"""
+cdef class FileInfo:
+    """Representation of libssh2 stat structure."""
 
-        def __cinit__(self):
-            with nogil:
-                self._stat = <c_ssh2.libssh2_struct_stat *>malloc(
-                    sizeof(c_ssh2.libssh2_struct_stat))
-                if self._stat is NULL:
-                    with gil:
-                        raise MemoryError
+    def __cinit__(self):
+        self._stat = <c_ssh2.libssh2_struct_stat *> PyMem_RawMalloc(<size_t> sizeof(c_ssh2.libssh2_struct_stat))
+        if self._stat is NULL:
+            raise MemoryError()
 
-        def __dealloc__(self):
-            free(self._stat)
+    def __dealloc__(self):
+        PyMem_RawFree(self._stat)
+
+    @property
+    def st_size(self):
+        return self._stat.st_size
+
+    @property
+    def st_mode(self):
+        return self._stat.st_mode
+
+    IF UNAME_SYSNAME != "Windows":
+        @property
+        def st_ino(self):
+            return self._stat.st_ino
 
         @property
-        def st_size(self):
-            return self._stat.st_size
+        def st_nlink(self):
+            return self._stat.st_nlink
 
         @property
-        def st_mode(self):
-            return self._stat.st_mode
+        def st_uid(self):
+            return self._stat.st_uid
 
-        IF UNAME_SYSNAME != "Windows":
-            @property
-            def st_ino(self):
-                return self._stat.st_ino
+        @property
+        def st_gid(self):
+            return self._stat.st_gid
 
-            @property
-            def st_nlink(self):
-                return self._stat.st_nlink
+        @property
+        def st_rdev(self):
+            return self._stat.st_rdev
 
-            @property
-            def st_uid(self):
-                return self._stat.st_uid
+        @property
+        def st_blksize(self):
+            return self._stat.st_blksize
 
-            @property
-            def st_gid(self):
-                return self._stat.st_gid
+        @property
+        def st_blocks(self):
+            return self._stat.st_blocks
 
-            @property
-            def st_rdev(self):
-                return self._stat.st_rdev
+        @property
+        def st_atime(self):
+            return self._stat.st_atime
 
-            @property
-            def st_blksize(self):
-                return self._stat.st_blksize
+        @property
+        def st_mtime(self):
+            return self._stat.st_mtime
 
-            @property
-            def st_blocks(self):
-                return self._stat.st_blocks
-
-            @property
-            def st_atime(self):
-                return self._stat.st_atime
-
-            @property
-            def st_mtime(self):
-                return self._stat.st_mtime
-
-            @property
-            def st_ctime(self):
-                return self._stat.st_ctime
+        @property
+        def st_ctime(self):
+            return self._stat.st_ctime

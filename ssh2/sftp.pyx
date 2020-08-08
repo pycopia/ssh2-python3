@@ -73,7 +73,7 @@ ___________________
 :var LIBSSH2_SFTP_ST_NOSUID: No suid
 """
 
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
 from ssh2.session cimport Session
 from ssh2.channel cimport Channel, PyChannel
@@ -415,7 +415,7 @@ cdef class SFTP:
           real path.
         :raises: :py:class:`ssh2.exceptions.SFTPBufferTooSmall` on max_len less
           than real path length."""
-        cdef char *_target = <char *>malloc(sizeof(char)*max_len)
+        cdef char *_target = <char *>PyMem_RawMalloc(sizeof(char)*max_len)
         if _target is NULL:
             raise MemoryError
         cdef int rc
@@ -430,7 +430,7 @@ cdef class SFTP:
                         return handle_error_codes(rc)
             return to_str_len(_target, rc)
         finally:
-            free(_target)
+            PyMem_RawFree(_target)
 
     def last_error(self):
         """Get last error code from SFTP channel.

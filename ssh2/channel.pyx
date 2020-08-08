@@ -15,7 +15,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
 from ssh2.session cimport Session
 from ssh2.exceptions import ChannelError
@@ -132,7 +132,7 @@ cdef class Channel:
         cdef char *cbuf
         cdef ssize_t rc
         with nogil:
-            cbuf = <char *>malloc(sizeof(char)*size)
+            cbuf = <char *>PyMem_RawMalloc(sizeof(char)*size)
             if cbuf is NULL:
                 with gil:
                     raise MemoryError
@@ -142,7 +142,7 @@ cdef class Channel:
             if rc > 0:
                 buf = cbuf[:rc]
         finally:
-            free(cbuf)
+            PyMem_RawFree(cbuf)
         handle_error_codes(rc)
         return rc, buf
 
@@ -372,7 +372,7 @@ cdef class Channel:
         cdef const char *_buf = b_buf
         cdef size_t buf_remainder = len(b_buf)
         cdef size_t buf_tot_size = buf_remainder
-        cdef ssize_t rc
+        cdef ssize_t rc = -1
         cdef size_t bytes_written = 0
         with nogil:
             while buf_remainder > 0:
@@ -420,7 +420,7 @@ cdef class Channel:
         cdef const char *_buf = b_buf
         cdef size_t buf_remainder = len(b_buf)
         cdef size_t buf_tot_size = buf_remainder
-        cdef ssize_t rc
+        cdef ssize_t rc = -1
         cdef size_t bytes_written = 0
         with nogil:
             # Write until buffer has been fully written or socket is blocked
@@ -467,7 +467,7 @@ cdef class Channel:
         cdef const char *_buf = b_buf
         cdef size_t buf_remainder = len(b_buf)
         cdef size_t buf_tot_size = buf_remainder
-        cdef ssize_t rc
+        cdef ssize_t rc = -1
         cdef size_t bytes_written = 0
         with nogil:
             while buf_remainder > 0:

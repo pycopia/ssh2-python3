@@ -15,7 +15,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
 from ssh2.session cimport Session
 from ssh2.utils cimport to_bytes, handle_error_codes
@@ -101,7 +101,7 @@ cdef c_pkey.libssh2_publickey_attribute * to_c_attr(list attrs):
     cdef size_t size = len(attrs)
     cdef c_pkey.libssh2_publickey_attribute attr
     with nogil:
-        _attrs = <c_pkey.libssh2_publickey_attribute *>malloc(
+        _attrs = <c_pkey.libssh2_publickey_attribute *>PyMem_RawMalloc(
             (size + 1) * sizeof(c_pkey.libssh2_publickey_attribute))
         if _attrs is NULL:
             with gil:
@@ -152,7 +152,7 @@ cdef class PublicKeySystem:
                 self.pkey_s, _name, name_len, _blob,
                 blob_len, overwrite, num_attrs, _attrs)
             if _attrs is not NULL:
-                free(_attrs)
+                PyMem_RawFree(_attrs)
         return handle_error_codes(rc)
 
     def remove(self, bytes name, bytes blob):

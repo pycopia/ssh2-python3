@@ -16,7 +16,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 from cpython cimport PyObject_AsFileDescriptor
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawRealloc, PyMem_RawFree
 from libc.time cimport time_t
 
 from ssh2.agent cimport PyAgent, agent_auth, agent_init, init_connect_agent
@@ -28,9 +28,7 @@ from ssh2.publickey cimport PyPublicKeySystem
 from ssh2.utils cimport to_bytes, to_str, handle_error_codes
 from ssh2.statinfo cimport StatInfo
 from ssh2.knownhost cimport PyKnownHost
-IF EMBEDDED_LIB:
-    from ssh2.fileinfo cimport FileInfo
-
+from ssh2.fileinfo cimport FileInfo
 
 from ssh2 cimport c_ssh2
 from ssh2 cimport c_sftp
@@ -44,6 +42,22 @@ LIBSSH2_HOSTKEY_HASH_SHA1 = c_ssh2.LIBSSH2_HOSTKEY_HASH_SHA1
 LIBSSH2_HOSTKEY_TYPE_UNKNOWN = c_ssh2.LIBSSH2_HOSTKEY_TYPE_UNKNOWN
 LIBSSH2_HOSTKEY_TYPE_RSA = c_ssh2.LIBSSH2_HOSTKEY_TYPE_RSA
 LIBSSH2_HOSTKEY_TYPE_DSS = c_ssh2.LIBSSH2_HOSTKEY_TYPE_DSS
+IF EMBEDDED_LIB:
+    LIBSSH2_HOSTKEY_HASH_SHA256 = c_ssh2.LIBSSH2_HOSTKEY_HASH_SHA256
+    LIBSSH2_HOSTKEY_TYPE_ECDSA_256 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ECDSA_256
+    LIBSSH2_HOSTKEY_TYPE_ECDSA_384 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ECDSA_384
+    LIBSSH2_HOSTKEY_TYPE_ECDSA_521 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ECDSA_521
+    LIBSSH2_HOSTKEY_TYPE_ED25519 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ED25519
+
+
+cdef void *PySSH2_Malloc(size_t count, void **abstract) nogil:
+    return PyMem_RawMalloc(count)
+
+cdef void *PySSH2_Realloc(void *ptr, size_t count, void **abstract) nogil:
+    return PyMem_RawRealloc(ptr, count)
+
+cdef void PySSH2_Free(void *ptr, void **abstract) nogil:
+    PyMem_RawFree(ptr)
 
 
 cdef class Session:
@@ -51,7 +65,11 @@ cdef class Session:
     """LibSSH2 Session class providing session functions"""
 
     def __cinit__(self):
-        self._session = c_ssh2.libssh2_session_init()
+        c_ssh2.libssh2_init(0)
+        self._session = c_ssh2.libssh2_session_init_ex(PySSH2_Malloc,
+                                                       PySSH2_Free,
+                                                       PySSH2_Realloc,
+                                                       <void *> NULL)
         if self._session is NULL:
             raise MemoryError
         self._sock = 0
@@ -61,6 +79,7 @@ cdef class Session:
         if self._session is not NULL:
             c_ssh2.libssh2_session_free(self._session)
         self._session = NULL
+        c_ssh2.libssh2_exit()
 
     def disconnect(self):
         cdef int rc
@@ -262,25 +281,6 @@ cdef class Session:
                 self._session, _username, _password)
         return handle_error_codes(rc)
 
-    def userauth_keyboardinteractive(self, username not None,
-                                     password not None):
-        """Perform keyboard-interactive authentication
-
-        :param username: User name to authenticate.
-        :type username: str
-        :param password: Password
-        :type password: str
-        """
-        cdef int rc
-        cdef bytes b_username = to_bytes(username)
-        cdef bytes b_password = to_bytes(password)
-        cdef const char *_username = b_username
-        cdef const char *_password = b_password
-        with nogil:
-            rc = c_ssh2.libssh2_userauth_keyboard_interactive(
-                self._session, _username, _password)
-        return handle_error_codes(rc)
-
     def agent_init(self):
         """Initialise SSH agent.
 
@@ -451,7 +451,7 @@ cdef class Session:
         cdef bytes msg = b''
         cdef int errmsg_len = 0
         with nogil:
-            _error_msg = <char *>malloc(sizeof(char) * msg_size)
+            _error_msg = <char *>PyMem_RawMalloc(sizeof(char) * msg_size)
             c_ssh2.libssh2_session_last_error(
                 self._session, &_error_msg, &errmsg_len, 1)
         try:
@@ -459,7 +459,7 @@ cdef class Session:
                 msg = _error_msg[:errmsg_len]
             return msg
         finally:
-            free(_error_msg)
+            PyMem_RawFree(_error_msg)
 
     def last_errno(self):
         """Retrieve last error number from libssh2, if any.

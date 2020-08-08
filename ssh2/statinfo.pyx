@@ -15,7 +15,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
 from ssh2.c_stat cimport struct_stat
 
@@ -25,14 +25,13 @@ cdef class StatInfo:
 
     def __cinit__(self):
         with nogil:
-            self._stat = <struct_stat *>malloc(
-                sizeof(struct_stat))
+            self._stat = <struct_stat *>PyMem_RawMalloc(sizeof(struct_stat))
             if self._stat is NULL:
                 with gil:
                     raise MemoryError
 
     def __dealloc__(self):
-        free(self._stat)
+        PyMem_RawFree(self._stat)
 
     @property
     def st_size(self):
