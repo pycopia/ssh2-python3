@@ -71,7 +71,7 @@ cdef class Session:
                                                        PySSH2_Realloc,
                                                        <void *> NULL)
         if self._session is NULL:
-            raise MemoryError
+            raise MemoryError()
         self._sock = 0
         self.sock = None
 

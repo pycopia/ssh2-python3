@@ -178,6 +178,10 @@ cpdef int handle_error_codes(int errcode) except -1:
         raise exceptions.BadSocketError
     elif errcode == error_codes._LIBSSH2_ERROR_KNOWN_HOSTS:
         raise exceptions.KnownHostError
+    elif errcode == error_codes._LIBSSH2_ERROR_CHANNEL_WINDOW_FULL:
+        raise exceptions.ChannelWindowFull
+    elif errcode == error_codes._LIBSSH2_ERROR_KEYFILE_AUTH_FAILED:
+        raise exceptions.KeyfileAuthFailed
     else:
         # Switch default
         if errcode < 0:

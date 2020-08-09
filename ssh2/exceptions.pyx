@@ -286,3 +286,9 @@ class KnownHostGetError(KnownHostError):
 
 class UnknownError(SSH2Error):
     """Raised on non-specific or unknown errors"""
+
+class ChannelWindowFull(SSH2Error):
+    """Raised when channel window is full."""
+
+class KeyfileAuthFailed(SSH2Error):
+    """Raised when keyfile authorization failed."""
