@@ -89,11 +89,11 @@ setup(
     version=versioneer.get_version(),
     cmdclass=cmdclass,
     tests_require=['pytest'],
-    url='https://github.com/ParallelSSH/ssh2-python',
+    url='https://github.com/kdart-brt/ssh2-python',
     license='LGPLv2',
     author='Panos Kittenis',
     author_email='22e889d8@opayq.com',
-    description=('Super fast SSH library - bindings for libssh2'),
+    description=('Super fast SSH library - bindings for libssh2 and Python 3'),
     long_description=open('README.rst').read(),
     packages=find_packages(
         '.', exclude=('embedded_server', 'embedded_server.*',

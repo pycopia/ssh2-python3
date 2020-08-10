@@ -19,19 +19,10 @@ Binary wheel packages are provided for Linux, OSX and Windows, all Python versio
 
    pip install ssh2-python3
 
-For from source installation instructions, including building against system provided libssh2,
-`see documentation <https://ssh2-python.readthedocs.io/en/latest/installation.html#installation-from-source>`_.
-
-For creating native system packages for Centos/RedHat, Ubuntu, Debian and Fedora, see
-`instructions in the documentation <http://ssh2-python.readthedocs.io/en/latest/installation.html#system-binary-packages>`_.
-
-
 API Feature Set
 ________________
 
 At this time all of the `libssh2`_ API has been implemented up to version ``1.9.0``.
-
-Complete example scripts for various operations can be found in the `examples directory`_.
 
 In addition, as ``ssh2-python3`` is a thin wrapper of ``libssh2`` with Python 3 semantics,
 `its code examples <https://libssh2.org/examples/>`_ can be ported straight over to Python with only minimal
@@ -59,18 +50,14 @@ Extension features:
 Quick Start
 _____________
 
-Both byte and unicode strings are accepted as arguments and encoded appropriately. To change default encoding, ``utf-8``, change the value of ``ssh2.utils.ENCODING``. Output is always in byte strings.
-
-See `Complete Example`_ for an example including socket connect.
-
-Please use either the issue tracker for reporting issues with code or the `mail group`_ for discussion and questions.
+Both byte and unicode strings are accepted as arguments and encoded appropriately. To change default
+encoding, ``utf-8``, change the value of ``ssh2.utils.ENCODING``. Output is always in byte strings.
 
 Contributions are most welcome!
 
 
 Authentication Methods
--------------------------
-
+----------------------
 
 Connect and get available authentication methods.
 
@@ -94,7 +81,7 @@ Output will vary depending on SSH server configuration. For example:
 
 
 Agent Authentication
-------------------------
+--------------------
 
 .. code-block:: python
 
@@ -177,7 +164,7 @@ __________________
 
 A simple usage example looks very similar to ``libssh2`` `usage examples <https://www.libssh2.org/examples/>`_.
 
-As mentioned, ``ssh2-python`` is intentionally a thin wrapper over ``libssh2`` and directly maps most of its API.
+As mentioned, ``ssh2-python3`` is intentionally a thin wrapper over ``libssh2`` and directly maps most of its API.
 
 Clients using this library can be much simpler to use than interfacing with the ``libssh2`` API directly.
 
@@ -233,32 +220,5 @@ ________________________________________
 
 And more, as per `libssh2`_ functionality.
 
-
-Comparison with other Python SSH libraries
--------------------------------------------
-
-Performance of above example, compared with Paramiko.
-
-.. code-block:: shell
-
-   time python examples/example_echo.py
-   time python examples/paramiko_comparison.py
-
-:Output:
-
-   ``ssh2-python``::
-
-     real	0m0.141s
-     user	0m0.037s
-     sys	0m0.008s
-
-   ``paramiko``::
-
-     real	0m0.592s
-     user	0m0.351s
-     sys	0m0.021s
-
-
 .. _libssh2: https://www.libssh2.org
 .. _Cython: https://www.cython.org
-.. _`mail group`: https://groups.google.com/forum/#!forum/ssh2-python
