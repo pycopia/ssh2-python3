@@ -25,6 +25,7 @@ from ssh2 cimport c_ssh2
 from ssh2 cimport sftp
 from ssh2 cimport error_codes
 
+cimport cython
 
 cdef object PyChannel(c_ssh2.LIBSSH2_CHANNEL *channel, Session session):
     cdef Channel _channel = Channel.__new__(Channel, session)
@@ -32,6 +33,7 @@ cdef object PyChannel(c_ssh2.LIBSSH2_CHANNEL *channel, Session session):
     return _channel
 
 
+@cython.no_gc
 cdef class Channel:
 
     def __cinit__(self, Session session):

@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3, no_gc_clear=True
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -16,7 +17,6 @@
 
 from ssh2.session cimport Session
 from ssh2 cimport c_ssh2
-
 
 cdef object PyChannel(c_ssh2.LIBSSH2_CHANNEL *channel, Session session)
 
