@@ -14,11 +14,13 @@ import shutil
 import getpass
 from glob import glob
 
+import semver
 import keyring
 from invoke import task, run, Exit
 
-# local user: pypi user
-SIGNERS = {"keithdart": "kdart"}
+# local user account name
+SIGNERS = ["keithdart", "keith"]
+CURRENT_USER = getpass.getuser()
 
 PYTHONBIN = os.environ.get("PYTHONBIN", sys.executable)
 # Put the path in quotes in case there is a space in it.
@@ -26,15 +28,11 @@ PYTHONBIN = f'"{PYTHONBIN}"'
 
 GPG = "gpg2"
 
-CURRENT_USER = getpass.getuser()
 
 # Package repo location. Putting info here eliminates the need for user-private ~/.pypirc file.
-REPO_HOST = "pypi.org"
-REPO_PORT = 80
-REPOSITORY_URL = f"http://{REPO_HOST}:{REPO_PORT}/"
-REPO_USERNAME = SIGNERS.get(CURRENT_USER)
-REPO_INDEX = f"{REPOSITORY_URL}simple"
-
+REPO_HOST = "upload.pypi.org"
+REPOSITORY_URL = f"https://{REPO_HOST}/legacy/"
+REPO_USERNAME = "__token__"
 
 @task
 def info(ctx):
@@ -44,7 +42,7 @@ def info(ctx):
     print(f"Project version: {version}")
     print(f"Python being used: {PYTHONBIN}")
     print(f"Python extension suffix: {suffix}")
-    print(f"repo URL: {REPOSITORY_URL} User: {REPO_USERNAME}")
+    print(f"repo URL: {REPOSITORY_URL}")
 
 
 @task
@@ -56,8 +54,7 @@ def build(ctx):
 @task
 def dev_requirements(ctx):
     """Install development requirements."""
-    ctx.run(f"{PYTHONBIN} -m pip install --index-url {REPO_INDEX} --trusted-host {REPO_HOST} "
-            f"-r requirements_dev.txt --user")
+    ctx.run(f"{PYTHONBIN} -m pip install -r requirements_dev.txt --user")
 
 
 @task(pre=[dev_requirements])
@@ -66,7 +63,7 @@ def develop(ctx, uninstall=False):
     if uninstall:
         ctx.run(f"{PYTHONBIN} setup.py develop --uninstall --user")
     else:
-        ctx.run(f'{PYTHONBIN} setup.py develop --index-url "{REPO_INDEX}" --user')
+        ctx.run(f'{PYTHONBIN} setup.py develop --user')
 
 
 @task
@@ -129,14 +126,14 @@ def sign(ctx):
 @task(pre=[sign])
 def publish(ctx):
     """Publish built wheel file to internal package repo."""
-    pw = get_repo_password()
+    token = get_repo_token()
     distfiles = glob("dist/*.whl")
     distfiles.extend(glob("dist/*.tar.gz"))
     if not distfiles:
         raise Exit("Nothing in dist folder!")
     distfiles = " ".join(distfiles)
     ctx.run(f'{PYTHONBIN} -m twine upload --repository-url \"{REPOSITORY_URL}\" '
-            f'--username {REPO_USERNAME} --password {pw} {distfiles}')
+            f'--username {REPO_USERNAME} --password {token} {distfiles}')
 
 
 @task
@@ -159,6 +156,45 @@ def branch(ctx, name=None):
 
 
 @task
+def tag(ctx, tag=None, major=False, minor=False, patch=False):
+    """Tag or bump release with a semver tag, prefixed with 'v'. Makes a signed tag."""
+    latest = None
+    if tag is None:
+        tags = get_tags()
+        if not tags:
+            latest = semver.VersionInfo(0, 0, 0)
+        else:
+            latest = tags[-1]
+        if patch:
+            nextver = latest.bump_patch()
+        elif minor:
+            nextver = latest.bump_minor()
+        elif major:
+            nextver = latest.bump_major()
+        else:
+            nextver = latest.bump_patch()
+    else:
+        if tag.startswith("v"):
+            tag = tag[1:]
+        try:
+            nextver = semver.parse_version_info(tag)
+        except ValueError:
+            raise Exit("Invalid semver tag.", 2)
+
+    print(latest, "->", nextver)
+    tagopt = "-s" if CURRENT_USER in SIGNERS else "-a"
+    ctx.run(f'git tag {tagopt} -m "Release v{nextver}" v{nextver}')
+
+
+@task
+def tag_delete(ctx, tag=None):
+    """Delete a tag, both local and remote."""
+    if tag:
+        ctx.run(f"git tag -d {tag}")
+        ctx.run(f"git push origin :refs/tags/{tag}")
+
+
+@task
 def branch_delete(ctx, name=None):
     """Delete local, remote and tracking branch by name."""
     if name:
@@ -170,24 +206,36 @@ def branch_delete(ctx, name=None):
 
 
 @task
-def set_repo_password(ctx):
-    """Set the password in the local key ring for the Artifactory account used as the package repo.
+def set_token(ctx):
+    """Set the password in the local key ring for the pypi account used as the package repo.
     """
-    pw = getpass.getpass(f"Password for {REPO_USERNAME} account on {REPO_HOST}? ")
+    pw = getpass.getpass(f"token for account on {REPO_HOST}? ")
     if pw:
-        repeat_pw = getpass.getpass("Please repeat it: ")
-        if repeat_pw == pw:
-            keyring.set_password(REPO_HOST, REPO_USERNAME, pw)
-        else:
-            raise Exit("Passwords did not match!", 2)
+        keyring.set_password(REPO_HOST, REPO_USERNAME, pw)
     else:
-        raise Exit("No password entered.", 3)
+        raise Exit("No token entered.", 3)
 
 
-def get_repo_password():
+# Helper functions follow.
+
+def get_tags():
+    rv = run('git tag -l "v*"', hide="out")
+    vilist = []
+    for line in rv.stdout.split():
+        try:
+            vi = semver.parse_version_info(line[1:])
+        except ValueError:
+            pass
+        else:
+            vilist.append(vi)
+    vilist.sort()
+    return vilist
+
+
+def get_repo_token():
     cred = keyring.get_credential(REPO_HOST, REPO_USERNAME)
     if not cred:
-        raise Exit("You must set the Artifactory password first with set-password target.", 1)
+        raise Exit("You must set the pypi token first with set-token target.", 1)
     return cred.password
 
 
