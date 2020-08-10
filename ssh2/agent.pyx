@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -14,13 +15,13 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from pkey cimport PublicKey, PyPublicKey
-from utils cimport to_bytes
+from ssh2.pkey cimport PublicKey, PyPublicKey
+from ssh2.utils cimport to_bytes
 
 from .exceptions import AgentConnectionError, AgentListIdentitiesError, \
     AgentGetIdentityError, AgentAuthenticationError, AgentError
 
-cimport c_ssh2
+from ssh2 cimport c_ssh2
 
 
 cdef int agent_auth(char * _username,
@@ -130,8 +131,7 @@ cdef class Agent:
             prev = identity
         return identities
 
-    def userauth(self, username not None,
-                 PublicKey pkey):
+    def userauth(self, username not None, PublicKey pkey):
         """Perform user authentication with specific public key
 
         :param username: User name to authenticate as
@@ -146,9 +146,12 @@ cdef class Agent:
         cdef int rc
         cdef bytes b_username = to_bytes(username)
         cdef char *_username = b_username
+        cdef c_ssh2.libssh2_agent_publickey *c_pkey = NULL
+
+        # Pull C key to local reference to avoid Python object access without GIL, below.
+        c_pkey = pkey._pkey
         with nogil:
-            rc = c_ssh2.libssh2_agent_userauth(
-                self._agent, _username, pkey._pkey)
+            rc = c_ssh2.libssh2_agent_userauth(self._agent, _username, c_pkey)
             if rc != 0 and rc != c_ssh2.LIBSSH2_ERROR_EAGAIN:
                 with gil:
                     raise AgentAuthenticationError(

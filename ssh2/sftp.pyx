@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -72,15 +73,15 @@ ___________________
 :var LIBSSH2_SFTP_ST_NOSUID: No suid
 """
 
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
-from session cimport Session
-from channel cimport Channel, PyChannel
-from utils cimport to_bytes, to_str_len, handle_error_codes
-from sftp_handle cimport SFTPHandle, PySFTPHandle, SFTPAttributes, SFTPStatVFS
+from ssh2.session cimport Session
+from ssh2.channel cimport Channel, PyChannel
+from ssh2.utils cimport to_bytes, to_str_len, handle_error_codes
+from ssh2.sftp_handle cimport SFTPHandle, PySFTPHandle, SFTPAttributes, SFTPStatVFS
 
-cimport c_ssh2
-cimport c_sftp
+from ssh2 cimport c_ssh2
+from ssh2 cimport c_sftp
 
 
 # File types
@@ -414,7 +415,7 @@ cdef class SFTP:
           real path.
         :raises: :py:class:`ssh2.exceptions.SFTPBufferTooSmall` on max_len less
           than real path length."""
-        cdef char *_target = <char *>malloc(sizeof(char)*max_len)
+        cdef char *_target = <char *>PyMem_RawMalloc(sizeof(char)*max_len)
         if _target is NULL:
             raise MemoryError
         cdef int rc
@@ -429,7 +430,7 @@ cdef class SFTP:
                         return handle_error_codes(rc)
             return to_str_len(_target, rc)
         finally:
-            free(_target)
+            PyMem_RawFree(_target)
 
     def last_error(self):
         """Get last error code from SFTP channel.

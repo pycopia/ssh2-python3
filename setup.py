@@ -1,26 +1,17 @@
-from __future__ import print_function
+# python3
 
 import platform
 import os
 import sys
 from glob import glob
-from multiprocessing import cpu_count
 
 from _setup_libssh2 import build_ssh2
 
 import versioneer
 from setuptools import setup, find_packages
 
-cpython = platform.python_implementation() == 'CPython'
-
-try:
-    from Cython.Distutils.extension import Extension
-    from Cython.Distutils import build_ext
-except ImportError:
-    from setuptools import Extension
-    USING_CYTHON = False
-else:
-    USING_CYTHON = True
+from Cython.Distutils.extension import Extension
+from Cython.Distutils import build_ext
 
 ON_RTD = os.environ.get('READTHEDOCS') == 'True'
 
@@ -37,8 +28,7 @@ if not SYSTEM_LIBSSH2 and (len(sys.argv) >= 2 and not (
 
 ON_WINDOWS = platform.system() == 'Windows'
 
-ext = 'pyx' if USING_CYTHON else 'c'
-sources = glob('ssh2/*.%s' % (ext,))
+sources = glob('ssh2/*.pyx')
 _arch = platform.architecture()[0][0:2]
 _libs = ['ssh2'] if not ON_WINDOWS else [
     'Ws2_32', 'libssh2', 'user32',
@@ -46,27 +36,27 @@ _libs = ['ssh2'] if not ON_WINDOWS else [
     'zlibstatic',
 ]
 
-# _comp_args = ["-ggdb"]
 _fwd_default = 0
 _comp_args = ["-O3"] if not ON_WINDOWS else None
 _embedded_lib = bool(int(os.environ.get('EMBEDDED_LIB', 1)))
 _have_agent_fwd = bool(int(os.environ.get('HAVE_AGENT_FWD', _fwd_default)))
 
-cython_directives = {'embedsignature': True,
-                     'boundscheck': False,
-                     'optimize.use_switch': True,
-                     'wraparound': False,
+cython_directives = {
+    'embedsignature': True,
+    'boundscheck': False,
+    'optimize.use_switch': True,
+    'wraparound': False,
+    'language_level': "3",
 }
+
 cython_args = {
+    'include_path': ["ssh2"],
     'cython_directives': cython_directives,
     'cython_compile_time_env': {
         'EMBEDDED_LIB': _embedded_lib,
         'HAVE_AGENT_FWD': _have_agent_fwd,
-    }} \
-    if USING_CYTHON else {}
-
-if USING_CYTHON:
-    sys.stdout.write("Cython arguments: %s%s" % (cython_args, os.linesep))
+    }
+}
 
 
 runtime_library_dirs = ["$ORIGIN/."] if not SYSTEM_LIBSSH2 else None
@@ -81,8 +71,7 @@ extensions = [
               library_dirs=[_lib_dir],
               runtime_library_dirs=runtime_library_dirs,
               extra_compile_args=_comp_args,
-              **cython_args
-    )
+              **cython_args)
     for i in range(len(sources))]
 
 package_data = {'ssh2': ['*.pxd', 'libssh2.so*']}
@@ -93,13 +82,13 @@ if ON_WINDOWS:
     ])
 
 cmdclass = versioneer.get_cmdclass()
-if USING_CYTHON:
-    cmdclass['build_ext'] = build_ext
+cmdclass['build_ext'] = build_ext
 
 setup(
-    name='ssh2-python',
+    name='ssh2-python3',
     version=versioneer.get_version(),
     cmdclass=cmdclass,
+    tests_require=['pytest'],
     url='https://github.com/ParallelSSH/ssh2-python',
     license='LGPLv2',
     author='Panos Kittenis',
@@ -120,12 +109,11 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: C',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        "Programming Language :: Python :: 3 :: Only",
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: System :: Shells',
         'Topic :: System :: Networking',
         'Topic :: Software Development :: Libraries',

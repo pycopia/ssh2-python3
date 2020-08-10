@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -14,15 +15,17 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from libc.stdlib cimport malloc, free
-from session cimport Session
-from exceptions import ChannelError
-from utils cimport to_bytes, handle_error_codes
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
-cimport c_ssh2
-cimport sftp
-cimport error_codes
+from ssh2.session cimport Session
+from ssh2.exceptions import ChannelError
+from ssh2.utils cimport to_bytes, handle_error_codes
 
+from ssh2 cimport c_ssh2
+from ssh2 cimport sftp
+from ssh2 cimport error_codes
+
+cimport cython
 
 cdef object PyChannel(c_ssh2.LIBSSH2_CHANNEL *channel, Session session):
     cdef Channel _channel = Channel.__new__(Channel, session)
@@ -30,6 +33,7 @@ cdef object PyChannel(c_ssh2.LIBSSH2_CHANNEL *channel, Session session):
     return _channel
 
 
+@cython.no_gc
 cdef class Channel:
 
     def __cinit__(self, Session session):
@@ -130,7 +134,7 @@ cdef class Channel:
         cdef char *cbuf
         cdef ssize_t rc
         with nogil:
-            cbuf = <char *>malloc(sizeof(char)*size)
+            cbuf = <char *>PyMem_RawMalloc(sizeof(char)*size)
             if cbuf is NULL:
                 with gil:
                     raise MemoryError
@@ -140,7 +144,7 @@ cdef class Channel:
             if rc > 0:
                 buf = cbuf[:rc]
         finally:
-            free(cbuf)
+            PyMem_RawFree(cbuf)
         handle_error_codes(rc)
         return rc, buf
 
@@ -370,7 +374,7 @@ cdef class Channel:
         cdef const char *_buf = b_buf
         cdef size_t buf_remainder = len(b_buf)
         cdef size_t buf_tot_size = buf_remainder
-        cdef ssize_t rc
+        cdef ssize_t rc = -1
         cdef size_t bytes_written = 0
         with nogil:
             while buf_remainder > 0:
@@ -418,7 +422,7 @@ cdef class Channel:
         cdef const char *_buf = b_buf
         cdef size_t buf_remainder = len(b_buf)
         cdef size_t buf_tot_size = buf_remainder
-        cdef ssize_t rc
+        cdef ssize_t rc = -1
         cdef size_t bytes_written = 0
         with nogil:
             # Write until buffer has been fully written or socket is blocked
@@ -465,7 +469,7 @@ cdef class Channel:
         cdef const char *_buf = b_buf
         cdef size_t buf_remainder = len(b_buf)
         cdef size_t buf_tot_size = buf_remainder
-        cdef ssize_t rc
+        cdef ssize_t rc = -1
         cdef size_t bytes_written = 0
         with nogil:
             while buf_remainder > 0:

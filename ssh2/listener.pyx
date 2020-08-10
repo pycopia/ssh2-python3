@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -14,11 +15,11 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-from session cimport Session
-from channel cimport PyChannel
-from utils cimport handle_error_codes
+from ssh2.session cimport Session
+from ssh2.channel cimport PyChannel
+from ssh2.utils cimport handle_error_codes
 
-cimport c_ssh2
+from ssh2 cimport c_ssh2
 
 
 cdef object PyListener(c_ssh2.LIBSSH2_LISTENER *listener, Session session):

@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -16,12 +17,12 @@
 
 """SFTP handle, attributes and stat VFS classes."""
 
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
 
-from utils cimport handle_error_codes
+from ssh2.utils cimport handle_error_codes
 
-cimport c_ssh2
-cimport c_sftp
+from ssh2 cimport c_ssh2
+from ssh2 cimport c_sftp
 
 
 cdef object PySFTPHandle(c_sftp.LIBSSH2_SFTP_HANDLE *handle, SFTP sftp):
@@ -34,7 +35,7 @@ cdef class SFTPAttributes:
 
     def __cinit__(self):
         with nogil:
-            self._attrs = <c_sftp.LIBSSH2_SFTP_ATTRIBUTES *>malloc(
+            self._attrs = <c_sftp.LIBSSH2_SFTP_ATTRIBUTES *>PyMem_RawMalloc(
                 sizeof(c_sftp.LIBSSH2_SFTP_ATTRIBUTES))
             if self._attrs is NULL:
                 with gil:
@@ -49,7 +50,7 @@ cdef class SFTPAttributes:
 
     def __dealloc__(self):
         with nogil:
-            free(self._attrs)
+            PyMem_RawFree(self._attrs)
 
     @property
     def flags(self):
@@ -163,7 +164,7 @@ cdef class SFTPHandle:
         cdef bytes buf = b''
         cdef char *cbuf
         with nogil:
-            cbuf = <char *>malloc(sizeof(char)*buffer_maxlen)
+            cbuf = <char *>PyMem_RawMalloc(sizeof(char)*buffer_maxlen)
             if cbuf is NULL:
                 with gil:
                     raise MemoryError
@@ -173,7 +174,7 @@ cdef class SFTPHandle:
             if rc > 0:
                 buf = cbuf[:rc]
         finally:
-            free(cbuf)
+            PyMem_RawFree(cbuf)
         return rc, buf
 
     def readdir_ex(self,
@@ -208,8 +209,8 @@ cdef class SFTPHandle:
         cdef char *longentry
         cdef SFTPAttributes attrs = SFTPAttributes()
         with nogil:
-            cbuf = <char *>malloc(sizeof(char)*buffer_maxlen)
-            longentry = <char *>malloc(sizeof(char)*longentry_maxlen)
+            cbuf = <char *>PyMem_RawMalloc(sizeof(char)*buffer_maxlen)
+            longentry = <char *>PyMem_RawMalloc(sizeof(char)*longentry_maxlen)
             if cbuf is NULL or longentry is NULL:
                 with gil:
                     raise MemoryError
@@ -221,8 +222,8 @@ cdef class SFTPHandle:
                 buf = cbuf[:rc]
                 b_longentry = longentry
         finally:
-            free(cbuf)
-            free(longentry)
+            PyMem_RawFree(cbuf)
+            PyMem_RawFree(longentry)
         return rc, buf, b_longentry, attrs
 
     def readdir(self, size_t buffer_maxlen=1024):
@@ -246,7 +247,7 @@ cdef class SFTPHandle:
         cdef char *cbuf
         cdef SFTPAttributes attrs = SFTPAttributes()
         with nogil:
-            cbuf = <char *>malloc(sizeof(char)*buffer_maxlen)
+            cbuf = <char *>PyMem_RawMalloc(sizeof(char)*buffer_maxlen)
             if cbuf is NULL:
                 with gil:
                     raise MemoryError
@@ -256,7 +257,7 @@ cdef class SFTPHandle:
             if rc > 0:
                 buf = cbuf[:rc]
         finally:
-            free(cbuf)
+            PyMem_RawFree(cbuf)
         return rc, buf, attrs
 
     def write(self, bytes buf):
@@ -407,7 +408,7 @@ cdef class SFTPStatVFS:
     def __cinit__(self, _sftp_ref):
         self._sftp_ref = _sftp_ref
         with nogil:
-            self._ptr = <c_sftp.LIBSSH2_SFTP_STATVFS *>malloc(
+            self._ptr = <c_sftp.LIBSSH2_SFTP_STATVFS *>PyMem_RawMalloc(
                 sizeof(c_sftp.LIBSSH2_SFTP_STATVFS))
             if self._ptr is NULL:
                 with gil:
@@ -427,7 +428,7 @@ cdef class SFTPStatVFS:
     def __dealloc__(self):
         with nogil:
             if self._ptr is not NULL:
-                free(self._ptr)
+                PyMem_RawFree(self._ptr)
 
     @property
     def f_bsize(self):

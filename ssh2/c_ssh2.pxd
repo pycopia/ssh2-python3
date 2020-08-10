@@ -15,17 +15,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 from libc.time cimport time_t
-from posix.types cimport blkcnt_t, blksize_t, dev_t, gid_t, ino_t, \
-    nlink_t, time_t, uid_t
-
-from c_stat cimport struct_stat
+from posix.types cimport blkcnt_t, blksize_t, dev_t, gid_t, ino_t, nlink_t, time_t, uid_t
 
 
 cdef extern from "libssh2.h" nogil:
     ctypedef long long libssh2_int64_t
     ctypedef int libssh2_socket_t
     ctypedef unsigned long long libssh2_uint64_t
-    int libssh2_init(int flags)
+
     enum:
         LIBSSH2_SESSION_BLOCK_INBOUND
         LIBSSH2_SESSION_BLOCK_OUTBOUND
@@ -39,9 +36,14 @@ cdef extern from "libssh2.h" nogil:
         LIBSSH2_HOSTKEY_TYPE_UNKNOWN
         LIBSSH2_HOSTKEY_TYPE_RSA
         LIBSSH2_HOSTKEY_TYPE_DSS
+
     IF EMBEDDED_LIB:
         enum:
             LIBSSH2_HOSTKEY_HASH_SHA256
+            LIBSSH2_HOSTKEY_TYPE_ECDSA_256
+            LIBSSH2_HOSTKEY_TYPE_ECDSA_384
+            LIBSSH2_HOSTKEY_TYPE_ECDSA_521
+            LIBSSH2_HOSTKEY_TYPE_ED25519
 
     # ctypedef libssh2_uint64_t libssh2_struct_stat_size
     ctypedef struct libssh2_struct_stat:
@@ -80,11 +82,12 @@ cdef extern from "libssh2.h" nogil:
     int libssh2_session_supported_algs(LIBSSH2_SESSION* session,
                                        int method_type,
                                        const char*** algs)
-    LIBSSH2_SESSION *libssh2_session_init_ex((void *),
-                                             (void *),
-                                             (void *),
-                                             (void *))
-    LIBSSH2_SESSION *libssh2_session_init()
+
+    LIBSSH2_SESSION *libssh2_session_init_ex(void *(*my_alloc)(size_t count, void **abstract),
+                                             void (*my_free)(void *ptr, void **abstract),
+                                             void *(*my_realloc)(void *ptr, size_t count, void **abstract),
+                                             void *abstract)
+    # LIBSSH2_SESSION *libssh2_session_init()
     void **libssh2_session_abstract(LIBSSH2_SESSION *session)
     void *libssh2_session_callback_set(LIBSSH2_SESSION *session,
                                        int cbtype, void *callback)
@@ -142,7 +145,7 @@ cdef extern from "libssh2.h" nogil:
                                                  (void *))
     int libssh2_userauth_keyboard_interactive(LIBSSH2_SESSION *session,
                                               const char *username,
-                                              const char *password)
+                                              (void *))
     int libssh2_userauth_publickey_fromfile_ex(LIBSSH2_SESSION *session,
                                                const char *username,
                                                unsigned int username_len,
@@ -327,10 +330,6 @@ cdef extern from "libssh2.h" nogil:
     int libssh2_channel_wait_closed(LIBSSH2_CHANNEL *channel)
     int libssh2_channel_free(LIBSSH2_CHANNEL *channel)
 
-    # libssh2_scp_recv is DEPRECATED, do not use!
-    LIBSSH2_CHANNEL *libssh2_scp_recv(LIBSSH2_SESSION *session,
-                                      const char *path,
-                                      struct_stat *sb)
     # Use libssh2_scp_recv2 for large (> 2GB) file support on windows
     LIBSSH2_CHANNEL *libssh2_scp_recv2(LIBSSH2_SESSION *session,
                                        const char *path,

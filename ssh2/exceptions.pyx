@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017-2018 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -285,3 +286,9 @@ class KnownHostGetError(KnownHostError):
 
 class UnknownError(SSH2Error):
     """Raised on non-specific or unknown errors"""
+
+class ChannelWindowFull(SSH2Error):
+    """Raised when channel window is full."""
+
+class KeyfileAuthFailed(SSH2Error):
+    """Raised when keyfile authorization failed."""

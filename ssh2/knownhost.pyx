@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -15,17 +16,18 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 from base64 import b64decode
-from libc.stdlib cimport malloc, free
-from session cimport Session
-from utils cimport to_bytes
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawFree
+
+from ssh2.session cimport Session
+from ssh2.utils cimport to_bytes
 from .exceptions import KnownHostAddError, KnownHostCheckMisMatchError, \
     KnownHostCheckFailure, KnownHostCheckNotFoundError, KnownHostError, \
     KnownHostDeleteError, KnownHostReadLineError, KnownHostReadFileError, \
     KnownHostWriteLineError, KnownHostWriteFileError, KnownHostGetError, \
     KnownHostCheckError
-from error_codes cimport _LIBSSH2_ERROR_BUFFER_TOO_SMALL
+from ssh2.error_codes cimport _LIBSSH2_ERROR_BUFFER_TOO_SMALL
 
-cimport c_ssh2
+from ssh2 cimport c_ssh2
 
 
 # Host format type masks
@@ -65,7 +67,7 @@ cdef KnownHostEntry PyNewKnownHostEntry():
     cdef KnownHostEntry entry = KnownHostEntry.__new__(KnownHostEntry)
     cdef c_ssh2.libssh2_knownhost *_entry
     with nogil:
-        _entry = <c_ssh2.libssh2_knownhost *>malloc(
+        _entry = <c_ssh2.libssh2_knownhost *>PyMem_RawMalloc(
             sizeof(c_ssh2.libssh2_knownhost))
         if _entry is NULL:
             with gil:
@@ -90,7 +92,7 @@ cdef class KnownHostEntry:
 
     def _dealloc__(self):
         with nogil:
-            free(self._store)
+            PyMem_RawFree(self._store)
 
     @property
     def magic(self):
@@ -343,7 +345,7 @@ cdef class KnownHost:
         cdef char *buf
         cdef int rc
         with nogil:
-            buf = <char *>malloc(sizeof(char)*buf_len)
+            buf = <char *>PyMem_RawMalloc(sizeof(char)*buf_len)
             if buf is NULL:
                 with gil:
                     raise MemoryError
@@ -359,7 +361,7 @@ cdef class KnownHost:
             if outlen > 0:
                 output = buf[:outlen]
         finally:
-            free(buf)
+            PyMem_RawFree(buf)
         return output
 
     def writefile(self, filename not None,

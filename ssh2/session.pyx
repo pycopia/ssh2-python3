@@ -1,4 +1,5 @@
 # This file is part of ssh2-python.
+# cython: language_level=3
 # Copyright (C) 2017 Panos Kittenis
 
 # This library is free software; you can redistribute it and/or
@@ -15,26 +16,23 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 from cpython cimport PyObject_AsFileDescriptor
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_RawMalloc, PyMem_RawRealloc, PyMem_RawFree
 from libc.time cimport time_t
 
-from agent cimport PyAgent, agent_auth, agent_init, init_connect_agent
-from channel cimport PyChannel
-from exceptions import SessionHostKeyError, KnownHostError, \
-    PublicKeyInitError, ChannelError
-from listener cimport PyListener
-from sftp cimport PySFTP
-from publickey cimport PyPublicKeySystem
-from utils cimport to_bytes, to_str, handle_error_codes
-from statinfo cimport StatInfo
-from knownhost cimport PyKnownHost
-IF EMBEDDED_LIB:
-    from fileinfo cimport FileInfo
+from ssh2.agent cimport PyAgent, agent_auth, agent_init, init_connect_agent
+from ssh2.channel cimport PyChannel
+from ssh2.exceptions import SessionHostKeyError, KnownHostError, PublicKeyInitError, ChannelError
+from ssh2.listener cimport PyListener
+from ssh2.sftp cimport PySFTP
+from ssh2.publickey cimport PyPublicKeySystem
+from ssh2.utils cimport to_bytes, to_str, handle_error_codes
+from ssh2.statinfo cimport StatInfo
+from ssh2.knownhost cimport PyKnownHost
+from ssh2.fileinfo cimport FileInfo
 
-
-cimport c_ssh2
-cimport c_sftp
-cimport c_pkey
+from ssh2 cimport c_ssh2
+from ssh2 cimport c_sftp
+from ssh2 cimport c_pkey
 
 
 LIBSSH2_SESSION_BLOCK_INBOUND = c_ssh2.LIBSSH2_SESSION_BLOCK_INBOUND
@@ -44,6 +42,22 @@ LIBSSH2_HOSTKEY_HASH_SHA1 = c_ssh2.LIBSSH2_HOSTKEY_HASH_SHA1
 LIBSSH2_HOSTKEY_TYPE_UNKNOWN = c_ssh2.LIBSSH2_HOSTKEY_TYPE_UNKNOWN
 LIBSSH2_HOSTKEY_TYPE_RSA = c_ssh2.LIBSSH2_HOSTKEY_TYPE_RSA
 LIBSSH2_HOSTKEY_TYPE_DSS = c_ssh2.LIBSSH2_HOSTKEY_TYPE_DSS
+IF EMBEDDED_LIB:
+    LIBSSH2_HOSTKEY_HASH_SHA256 = c_ssh2.LIBSSH2_HOSTKEY_HASH_SHA256
+    LIBSSH2_HOSTKEY_TYPE_ECDSA_256 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ECDSA_256
+    LIBSSH2_HOSTKEY_TYPE_ECDSA_384 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ECDSA_384
+    LIBSSH2_HOSTKEY_TYPE_ECDSA_521 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ECDSA_521
+    LIBSSH2_HOSTKEY_TYPE_ED25519 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ED25519
+
+
+cdef void *PySSH2_Malloc(size_t count, void **abstract) nogil:
+    return PyMem_RawMalloc(count)
+
+cdef void *PySSH2_Realloc(void *ptr, size_t count, void **abstract) nogil:
+    return PyMem_RawRealloc(ptr, count)
+
+cdef void PySSH2_Free(void *ptr, void **abstract) nogil:
+    PyMem_RawFree(ptr)
 
 
 cdef class Session:
@@ -51,9 +65,13 @@ cdef class Session:
     """LibSSH2 Session class providing session functions"""
 
     def __cinit__(self):
-        self._session = c_ssh2.libssh2_session_init()
+        c_ssh2.libssh2_init(0)
+        self._session = c_ssh2.libssh2_session_init_ex(PySSH2_Malloc,
+                                                       PySSH2_Free,
+                                                       PySSH2_Realloc,
+                                                       <void *> NULL)
         if self._session is NULL:
-            raise MemoryError
+            raise MemoryError()
         self._sock = 0
         self.sock = None
 
@@ -61,6 +79,7 @@ cdef class Session:
         if self._session is not NULL:
             c_ssh2.libssh2_session_free(self._session)
         self._session = NULL
+        c_ssh2.libssh2_exit()
 
     def disconnect(self):
         cdef int rc
@@ -221,29 +240,28 @@ cdef class Session:
                 _privatekey, _passphrase, _hostname)
         return handle_error_codes(rc)
 
-    IF EMBEDDED_LIB:
-        def userauth_publickey_frommemory(
-                self, username, bytes privatekeyfiledata,
-                passphrase='', bytes publickeyfiledata=None):
-            cdef int rc
-            cdef bytes b_username = to_bytes(username)
-            cdef bytes b_passphrase = to_bytes(passphrase)
-            cdef char *_username = b_username
-            cdef char *_passphrase = b_passphrase
-            cdef char *_publickeyfiledata = NULL
-            cdef char *_privatekeyfiledata = privatekeyfiledata
-            cdef size_t username_len, pubkeydata_len, privatekeydata_len
-            username_len, pubkeydata_len, privatekeydata_len = \
-                len(b_username), len(publickeyfiledata), \
-                len(privatekeyfiledata)
-            if publickeyfiledata is not None:
-                _publickeyfiledata = publickeyfiledata
-            with nogil:
-                rc = c_ssh2.libssh2_userauth_publickey_frommemory(
-                    self._session, _username, username_len, _publickeyfiledata,
-                    pubkeydata_len, _privatekeyfiledata,
-                    privatekeydata_len, _passphrase)
-            return handle_error_codes(rc)
+    def userauth_publickey_frommemory(
+            self, username, bytes privatekeyfiledata,
+            passphrase='', bytes publickeyfiledata=None):
+        cdef int rc
+        cdef bytes b_username = to_bytes(username)
+        cdef bytes b_passphrase = to_bytes(passphrase)
+        cdef char *_username = b_username
+        cdef char *_passphrase = b_passphrase
+        cdef char *_publickeyfiledata = NULL
+        cdef char *_privatekeyfiledata = privatekeyfiledata
+        cdef size_t username_len, pubkeydata_len, privatekeydata_len
+        username_len, pubkeydata_len, privatekeydata_len = \
+            len(b_username), len(publickeyfiledata), \
+            len(privatekeyfiledata)
+        if publickeyfiledata is not None:
+            _publickeyfiledata = publickeyfiledata
+        with nogil:
+            rc = c_ssh2.libssh2_userauth_publickey_frommemory(
+                self._session, _username, username_len, _publickeyfiledata,
+                pubkeydata_len, _privatekeyfiledata,
+                privatekeydata_len, _passphrase)
+        return handle_error_codes(rc)
 
     def userauth_password(self, username not None, password not None):
         """Perform password authentication
@@ -259,25 +277,6 @@ cdef class Session:
         cdef const char *_password = b_password
         with nogil:
             rc = c_ssh2.libssh2_userauth_password(
-                self._session, _username, _password)
-        return handle_error_codes(rc)
-
-    def userauth_keyboardinteractive(self, username not None,
-                                     password not None):
-        """Perform keyboard-interactive authentication
-
-        :param username: User name to authenticate.
-        :type username: str
-        :param password: Password
-        :type password: str
-        """
-        cdef int rc
-        cdef bytes b_username = to_bytes(username)
-        cdef bytes b_password = to_bytes(password)
-        cdef const char *_username = b_username
-        cdef const char *_password = b_password
-        with nogil:
-            rc = c_ssh2.libssh2_userauth_keyboard_interactive(
                 self._session, _username, _password)
         return handle_error_codes(rc)
 
@@ -326,6 +325,38 @@ cdef class Session:
         with nogil:
             agent_auth(_username, agent)
 
+    def open_channel(self, channeltype not None, message not None):
+        """Open a generic channel with custom message.
+
+
+        :param channeltype: The type field of the message.
+        :type channeltype: str or bytes
+        :param message: the message body as packed parameters according to the channel type.
+        :type channeltype: str or bytes
+
+        :rtype: :py:class:`ssh2.channel.Channel`
+        """
+        cdef bytes b_channeltype = to_bytes(channeltype)
+        cdef bytes b_message = to_bytes(message)
+        cdef c_ssh2.LIBSSH2_CHANNEL *channel
+
+        cdef char *channel_type = b_channeltype
+        cdef unsigned int channeltype_len = len(b_channeltype)
+        cdef char *c_message = b_message
+        cdef unsigned int message_len = len(b_message)
+
+        with nogil:
+            channel = c_ssh2.libssh2_channel_open_ex(self._session,
+                                                     channel_type,
+                                                     channeltype_len,
+                                                     c_ssh2.LIBSSH2_CHANNEL_WINDOW_DEFAULT,
+                                                     c_ssh2.LIBSSH2_CHANNEL_PACKET_DEFAULT,
+                                                     c_message,
+                                                     message_len)
+        if channel is NULL:
+            return handle_error_codes(c_ssh2.libssh2_session_last_errno(self._session))
+        return PyChannel(channel, self)
+
     def open_session(self):
         """Open new channel session.
 
@@ -333,8 +364,7 @@ cdef class Session:
         """
         cdef c_ssh2.LIBSSH2_CHANNEL *channel
         with nogil:
-            channel = c_ssh2.libssh2_channel_open_session(
-                self._session)
+            channel = c_ssh2.libssh2_channel_open_session(self._session)
         if channel is NULL:
             return handle_error_codes(c_ssh2.libssh2_session_last_errno(
                 self._session))
@@ -451,7 +481,7 @@ cdef class Session:
         cdef bytes msg = b''
         cdef int errmsg_len = 0
         with nogil:
-            _error_msg = <char *>malloc(sizeof(char) * msg_size)
+            _error_msg = <char *>PyMem_RawMalloc(sizeof(char) * msg_size)
             c_ssh2.libssh2_session_last_error(
                 self._session, &_error_msg, &errmsg_len, 1)
         try:
@@ -459,7 +489,7 @@ cdef class Session:
                 msg = _error_msg[:errmsg_len]
             return msg
         finally:
-            free(_error_msg)
+            PyMem_RawFree(_error_msg)
 
     def last_errno(self):
         """Retrieve last error number from libssh2, if any.
@@ -482,28 +512,6 @@ cdef class Session:
                 rc = c_ssh2.libssh2_session_set_last_error(
                     self._session, errcode, _errmsg)
             return rc
-
-    def scp_recv(self, path not None):
-        """Receive file via SCP.
-
-        Deprecated in favour or recv2 (requires libssh2 >= 1.7).
-
-        :param path: File path to receive.
-        :type path: str
-
-        :rtype: tuple(:py:class:`ssh2.channel.Channel`,
-          :py:class:`ssh2.statinfo.StatInfo`) or None"""
-        cdef bytes b_path = to_bytes(path)
-        cdef char *_path = b_path
-        cdef StatInfo statinfo = StatInfo()
-        cdef c_ssh2.LIBSSH2_CHANNEL *channel
-        with nogil:
-            channel = c_ssh2.libssh2_scp_recv(
-                self._session, _path, statinfo._stat)
-        if channel is NULL:
-            return handle_error_codes(c_ssh2.libssh2_session_last_errno(
-                self._session))
-        return PyChannel(channel, self), statinfo
 
     IF EMBEDDED_LIB:
         def scp_recv2(self, path not None):
