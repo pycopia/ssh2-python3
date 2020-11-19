@@ -63,11 +63,14 @@ cdef class Channel:
                 self._channel, _term)
         return handle_error_codes(rc)
 
-    def execute(self, command not None):
+    def execute(self, command not None, env=None):
         """Execute command.
 
         :param command: Command to execute
         :type command: str
+
+        :param env: Optional environment.
+        :type env: dict
 
         :raises: :py:class:`ssh2.exceptions.ChannelError` on errors executing
           command
@@ -77,6 +80,17 @@ cdef class Channel:
         cdef int rc
         cdef bytes b_command = to_bytes(command)
         cdef char *_command = b_command
+        cdef bytes b_varname
+        cdef bytes b_value
+
+        if env is not None:
+            for key, value in env.items():
+                b_varname = to_bytes(key)
+                b_value = to_bytes(value)
+                c_ssh2.libssh2_channel_setenv_ex(self._channel,
+                                                 b_varname, len(b_varname),
+                                                 b_value, len(b_value))
+
         with nogil:
             rc = c_ssh2.libssh2_channel_exec(
                 self._channel, _command)
@@ -530,6 +544,22 @@ cdef class Channel:
         with nogil:
             rc = c_ssh2.libssh2_channel_process_startup(
                 self._channel, _request, r_len, _message, m_len)
+        return handle_error_codes(rc)
+
+    def signal(self, signame):
+        """Send a signal to a started process.
+
+        The name is a signal name without the SIG prefix.
+
+        :param signame: Name of the signal.
+        :type signame: str
+        """
+        cdef bytes b_signame = to_bytes(signame)
+        cdef char *_signame = b_signame
+        cdef size_t signame_len = len(b_signame)
+        cdef int rc
+        with nogil:
+            rc = c_ssh2.libssh2_channel_signal_ex(self._channel, _signame, signame_len)
         return handle_error_codes(rc)
 
     def poll_channel_read(self, int extended):
