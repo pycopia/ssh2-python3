@@ -229,6 +229,13 @@ cdef extern from "libssh2.h" nogil:
     int libssh2_channel_setenv(LIBSSH2_CHANNEL *channel,
                                const char *varname,
                                const char *value)
+    int libssh2_channel_signal_ex(LIBSSH2_CHANNEL *channel,
+                                  const char *signalname,
+                                  unsigned int signalname_len,
+                                 )
+    int libssh2_channel_signal(LIBSSH2_CHANNEL *channel,
+                                  const char *signalname,
+                                 )
     int libssh2_channel_request_pty_ex(LIBSSH2_CHANNEL *channel,
                                        const char *term,
                                        unsigned int term_len,

@@ -452,6 +452,10 @@ struct _LIBSSH2_CHANNEL
     /* State variables used in libssh2_channel_handle_extended_data2() */
     libssh2_nonblocking_states extData2_state;
 
+    /* State variables used in libssh2_channel_signal_ex() */
+    libssh2_nonblocking_states sendsignal_state;
+    unsigned char *sendsignal_packet;
+    size_t sendsignal_packet_len;
 };
 
 struct _LIBSSH2_LISTENER
