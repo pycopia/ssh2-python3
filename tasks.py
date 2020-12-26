@@ -120,7 +120,7 @@ def bdist_manylinux(ctx):
     """Build a standard wheel file, an installable format, for manylinux target."""
     cwd = os.getcwd()
     cmd = (f'docker run -e PLAT=manylinux2014_x86_64 '
-           f'-v {cwd}:/io quay.io/pypa/manylinux2014_x86_64 bash building/build-wheels.sh')
+           f'-v {cwd}:/io quay.io/pypa/manylinux2014_x86_64 bash /io/building/build-wheels.sh')
     ctx.run(cmd)
 
 
