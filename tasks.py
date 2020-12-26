@@ -127,15 +127,17 @@ def bdist(ctx):
 def sign(ctx):
     """Cryptographically sign dist with your default GPG key."""
     if CURRENT_USER in SIGNERS:
-        ctx.run(f"{GPG} --detach-sign -a wheelhouse/ssh2_python3-*.whl")
-        ctx.run(f"{GPG} --detach-sign -a dist/ssh2-python3-*.tar.gz")
+        distfiles = glob("wheelhouse/*.whl")
+        distfiles.extend(glob("dist/*.tar.gz"))
+        for distfile in distfiles:
+            ctx.run(f"{GPG} --detach-sign -a {distfile}")
     else:
         print("Not signing.")
 
 
 @task(pre=[sign])
 def publish(ctx):
-    """Publish built wheel file to internal package repo."""
+    """Publish built wheel files to package repo."""
     token = get_repo_token()
     distfiles = glob("wheelhouse/*.whl")
     distfiles.extend(glob("dist/*.tar.gz"))
