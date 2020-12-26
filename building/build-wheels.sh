@@ -4,8 +4,10 @@ set -e -u -x
 
 cd /io
 
-addgroup --gid $GROUP_ID builder
-adduser --disabled-password --gecos 'Builder' --uid $USER_ID --gid $GROUP_ID builder
+groupadd --gid $GROUP_ID builder
+useradd --no-create-home --comment 'Builder' --uid $USER_ID --gid $GROUP_ID builder
+
+export PYTHONDONTWRITEBYTECODE=1
 
 # Install a system package required by our library
 yum install -y openssl-devel
@@ -13,12 +15,12 @@ yum install -y openssl-devel
 for PYBIN in /opt/python/*/bin; do
     "${PYBIN}/pip" install -U pip setuptools
     "${PYBIN}/pip" install -r requirements_dev.txt
-    "${PYBIN}/python" setup.py bdist_wheel
+    su builder -c "\"${PYBIN}/python\" setup.py bdist_wheel"
 done
 
 # Bundle external shared libraries into the wheels
 for whl in dist/*.whl; do
-    auditwheel repair "$whl" --plat "$PLAT" -w /io/wheelhouse/
+    su builder -c "auditwheel repair \"$whl\" --plat \"$PLAT\" -w /io/wheelhouse/"
 done
 
 ls wheelhouse/

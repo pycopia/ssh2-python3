@@ -118,7 +118,6 @@ def bdist(ctx):
     gid = os.getgid()
     cmd = (f'docker run -e PLAT=manylinux2014_x86_64 '
            f'-e USER_ID={uid} -e GROUP_ID={gid} '
-           f'--user {uid}:{gid} '
            f'--mount type=bind,src={cwd},dst=/io '
            f'quay.io/pypa/manylinux2014_x86_64 bash /io/building/build-wheels.sh')
     ctx.run(cmd)
