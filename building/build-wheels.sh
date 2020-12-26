@@ -2,11 +2,14 @@
 
 set -e -u -x
 
+cd /io
+
 # Install a system package required by our library
 yum install -y openssl-devel
 
 for PYBIN in /opt/python/*/bin; do
-    "${PYBIN}/pip" install -r /io/requirements-dev.txt
+    "${PYBIN}/pip" install -U pip setuptools
+    "${PYBIN}/pip" install -r requirements_dev.txt
     "${PYBIN}/python" setup.py bdist_wheel
 done
 
