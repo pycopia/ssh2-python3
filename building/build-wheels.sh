@@ -4,6 +4,9 @@ set -e -u -x
 
 cd /io
 
+addgroup --gid $GROUP_ID builder
+adduser --disabled-password --gecos 'Builder' --uid $USER_ID --gid $GROUP_ID builder
+
 # Install a system package required by our library
 yum install -y openssl-devel
 

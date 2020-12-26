@@ -34,6 +34,7 @@ REPO_HOST = "upload.pypi.org"
 REPOSITORY_URL = f"https://{REPO_HOST}/legacy/"
 REPO_USERNAME = "__token__"
 
+
 @task
 def info(ctx):
     """Show information about the current Python and environment."""
@@ -111,16 +112,15 @@ def build_ext(ctx):
 
 @task(sdist)
 def bdist(ctx):
-    """Build a standard wheel file, an installable format, for native arch."""
-    ctx.run(f"{PYTHONBIN} setup.py bdist_wheel")
-
-
-@task(sdist)
-def bdist_manylinux(ctx):
     """Build a standard wheel file, an installable format, for manylinux target."""
     cwd = os.getcwd()
+    uid = os.getuid()
+    gid = os.getgid()
     cmd = (f'docker run -e PLAT=manylinux2014_x86_64 '
-           f'-v {cwd}:/io quay.io/pypa/manylinux2014_x86_64 bash /io/building/build-wheels.sh')
+           f'-e USER_ID={uid} -e GROUP_ID={gid} '
+           f'--user {uid}:{gid} '
+           f'--mount type=bind,src={cwd},dst=/io '
+           f'quay.io/pypa/manylinux2014_x86_64 bash /io/building/build-wheels.sh')
     ctx.run(cmd)
 
 
@@ -141,7 +141,7 @@ def publish(ctx):
     distfiles = glob("wheelhouse/*.whl")
     distfiles.extend(glob("dist/*.tar.gz"))
     if not distfiles:
-        raise Exit("Nothing in dist folder!")
+        raise Exit("Nothing to publish folder!")
     distfiles = " ".join(distfiles)
     ctx.run(f'{PYTHONBIN} -m twine upload --repository-url \"{REPOSITORY_URL}\" '
             f'--username {REPO_USERNAME} --password {token} {distfiles}')
