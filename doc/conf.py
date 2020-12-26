@@ -50,9 +50,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'ssh2-python'
-copyright = u'2017, P Kittenis'
-author = u'P Kittenis'
+project = 'ssh2-python3'
+copyright = '2017, P Kittenis'
+author = 'P Kittenis'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -76,7 +76,7 @@ language = None
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'xcode'
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
@@ -146,7 +146,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'ssh2-python.tex', u'ssh2-python Documentation',
+    (master_doc, 'ssh2-python3.tex', u'ssh2-python3 Documentation',
      u'P Kittenis', 'manual'),
 ]
 
@@ -156,7 +156,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'ssh2-python', u'ssh2-python Documentation',
+    (master_doc, 'ssh2-python3', u'ssh2-python Documentation',
      [author], 1)
 ]
 
@@ -167,7 +167,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'ssh2-python', u'ssh2-python Documentation',
+    (master_doc, 'ssh2-python3', u'ssh2-python Documentation',
      author, 'ssh2-python', 'Python SSH library based on libssh2.',
      'Miscellaneous'),
 ]

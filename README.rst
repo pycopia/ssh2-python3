@@ -8,6 +8,22 @@ Super fast SSH2 protocol library. ``ssh2-python3`` provides Python bindings for 
    :alt: License
 
 
+This is a forked and modified version of the original, *ssh2-python*.
+
+Notable changes:
+
+- Supports Python 3 only.
+- Uses exclusively the embedded libssh2.
+_ Compiles libbsh2 to use Python's memory allocator.
+- Some new methods that support:
+  - Unix domain tunnel targets.
+  - The "signal" protocol message.
+  - Bug fixes.
+
+Any new bugs are the result of myself and not the orignal author (Panos Kittenis). 
+Many thanks for his fine work to get this started.
+
+
 Installation
 ______________
 

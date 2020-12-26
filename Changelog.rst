@@ -1,6 +1,27 @@
 Change Log
 =============
 
+0.20.0
+++++++
+
+Changes
+--------
+
+Add signal message support.
+
+
+0.19.0
+++++++
+
+Changes
+--------
+
+* Fix a bug
+* Use Python's internal PyMalloc for libssh2 allocator.
+* Add generic messageing method.
+* Support for Python 3 only.
+
+
 0.18.0
 +++++++
 

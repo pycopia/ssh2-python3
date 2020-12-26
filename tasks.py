@@ -82,6 +82,8 @@ def cleandist(ctx):
     if os.path.isdir("dist"):
         shutil.rmtree("dist", ignore_errors=True)
         os.mkdir("dist")
+    if os.path.isdir("wheelhouse"):
+        shutil.rmtree("wheelhouse", ignore_errors=True)
 
 
 @task
@@ -109,15 +111,24 @@ def build_ext(ctx):
 
 @task(sdist)
 def bdist(ctx):
-    """Build a standard wheel file, an installable format."""
+    """Build a standard wheel file, an installable format, for native arch."""
     ctx.run(f"{PYTHONBIN} setup.py bdist_wheel")
+
+
+@task(sdist)
+def bdist_manylinux(ctx):
+    """Build a standard wheel file, an installable format, for manylinux target."""
+    cwd = os.getcwd()
+    cmd = (f'docker run -e PLAT=manylinux2014_x86_64 '
+           f'-v {cwd}:/io quay.io/pypa/manylinux2014_x86_64 bash building/build-wheels.sh')
+    ctx.run(cmd)
 
 
 @task(bdist)
 def sign(ctx):
     """Cryptographically sign dist with your default GPG key."""
     if CURRENT_USER in SIGNERS:
-        ctx.run(f"{GPG} --detach-sign -a dist/ssh2_python3-*.whl")
+        ctx.run(f"{GPG} --detach-sign -a wheelhouse/ssh2_python3-*.whl")
         ctx.run(f"{GPG} --detach-sign -a dist/ssh2-python3-*.tar.gz")
     else:
         print("Not signing.")
@@ -127,7 +138,7 @@ def sign(ctx):
 def publish(ctx):
     """Publish built wheel file to internal package repo."""
     token = get_repo_token()
-    distfiles = glob("dist/*.whl")
+    distfiles = glob("wheelhouse/*.whl")
     distfiles.extend(glob("dist/*.tar.gz"))
     if not distfiles:
         raise Exit("Nothing in dist folder!")
