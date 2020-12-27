@@ -95,6 +95,7 @@ setup(
     author_email='22e889d8@opayq.com',
     description=('Super fast SSH library - bindings for libssh2 and Python 3'),
     long_description=open('README.rst').read(),
+    long_description_content_type="text/markdown",
     packages=find_packages(
         '.', exclude=('embedded_server', 'embedded_server.*',
                       'tests', 'tests.*',
