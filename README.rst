@@ -13,12 +13,13 @@ This is a forked and modified version of the original, *ssh2-python*.
 Notable changes:
 
 - Supports Python 3 only.
-- Uses exclusively the embedded libssh2.
+- Uses exclusively the embedded libssh2 (also modified to support Unix tunnel targets).
 _ Compiles libbsh2 to use Python's memory allocator.
 - Some new methods that support:
-  - Unix domain tunnel targets.
+  - Unix domain socket tunnel target on server host.
   - The "signal" protocol message.
-  - Bug fixes.
+  - Generic message constructor.
+  - Bug fixes. Notably, a segfault during garbage collection in certain situations.
 
 Any new bugs are the result of myself and not the orignal author (Panos Kittenis). 
 Many thanks for his fine work to get this started.
@@ -27,7 +28,7 @@ Many thanks for his fine work to get this started.
 Installation
 ______________
 
-Binary wheel packages are provided for Linux, OSX and Windows, all Python versions. Wheel packages have **no dependencies**.
+Binary wheel packages are provided for Linux, all recent Python versions. Wheel packages have **no dependencies**.
 
 ``pip`` may need to be updated to be able to install binary wheel packages - ``pip install -U pip``.
 
@@ -38,7 +39,7 @@ Binary wheel packages are provided for Linux, OSX and Windows, all Python versio
 API Feature Set
 ________________
 
-At this time all of the `libssh2`_ API has been implemented up to version ``1.9.0``.
+At this time all of the `libssh2`_ API has been implemented up to version ``1.9.1-embedded``.
 
 In addition, as ``ssh2-python3`` is a thin wrapper of ``libssh2`` with Python 3 semantics,
 `its code examples <https://libssh2.org/examples/>`_ can be ported straight over to Python with only minimal
@@ -227,12 +228,13 @@ ________________________________________
 * Public key authentication and management
 * SFTP operations
 * SFTP file handles and attributes
-* SSH port forwarding and tunnelling
+* SSH port forwarding and tunnelling, for both TCP and Unix sockets.
 * Non-blocking mode
 * SCP send and receive
 * Listener for port forwarding
 * Subsystem support
 * Host key checking and manipulation
+* Signal remote process.
 
 And more, as per `libssh2`_ functionality.
 

@@ -1,6 +1,15 @@
 Change Log
 =============
 
+0.22
+++++++
+
+Changes
+--------
+
+Clean up manylinux builds a little (but it's still not working right).
+
+
 0.20.0
 ++++++
 
@@ -16,10 +25,12 @@ Add signal message support.
 Changes
 --------
 
-* Fix a bug
+* Forked from ssh2-python and renamed ssh2-python3. The reason being:
+* Fix a bug where Python would segfault when GC was performed under certain conditions.
 * Use Python's internal PyMalloc for libssh2 allocator.
-* Add generic messageing method.
-* Support for Python 3 only.
+* Add generic message method that allows Python code to form a packet.
+* Support for Python 3 only, remove Python 2 support.
+* Add support for setting up forward to remote Unix socket.
 
 
 0.18.0
