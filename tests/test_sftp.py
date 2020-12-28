@@ -279,15 +279,15 @@ class SFTPTestCase(SSH2TestCase):
             LIBSSH2_SFTP_S_IRGRP | \
             LIBSSH2_SFTP_S_IROTH | \
             LIBSSH2_SFTP_S_IXUSR
-        _path = 'tmp'
-        abspath = os.path.join(os.path.expanduser('~'), _path)
+        _path = 'ssh2_test_mkdir_tmp'
+        abspath = os.path.join("/tmp", _path)
         self._auth()
         sftp = self.session.sftp_init()
         try:
             shutil.rmtree(abspath)
         except OSError:
             pass
-        sftp.mkdir(_path, mode)
+        sftp.mkdir(abspath, mode)
         try:
             self.assertTrue(os.path.isdir(abspath))
         finally:
