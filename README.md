@@ -28,7 +28,7 @@ Installation
 Binary wheel packages are provided for Linux, all recent Python versions. Wheel packages have **no
 dependencies**.
 
-`pip` may need to be updated to be able to install binary wheel packages - `pip install -U pip`.
+You may need to update `pip` to install recent binary wheel packages - `pip install -U pip`.
 
 ```console
 pip install ssh2-python3

@@ -13,10 +13,14 @@ import os
 import shutil
 import getpass
 from glob import glob
+from shutil import copy2
 
 import semver
 import keyring
 from invoke import task, run, Exit
+
+# local environment
+LIBC = os.confstr('CS_GNU_LIBC_VERSION').replace(" ", "")
 
 # local user account name
 SIGNERS = ["keithdart", "keith"]
@@ -30,16 +34,18 @@ GPG = "gpg2"
 
 
 # Package repo location. Putting info here eliminates the need for user-private ~/.pypirc file.
-REPO_HOST = "upload.pypi.org"
-REPOSITORY_URL = f"https://{REPO_HOST}/legacy/"
-REPO_USERNAME = "__token__"
+# You can also set them in your shell environment.
+REPO_HOST = os.environ.get("PYPI_REPO_HOST", "upload.pypi.org")
+REPOSITORY_URL = os.environ.get("PYPI_REPOSITORY_URL", f"https://{REPO_HOST}/legacy/")
+REPO_USERNAME = os.environ.get("PYPI_REPO_USERNAME", "__token__")
 
 
 @task
 def info(ctx):
     """Show information about the current Python and environment."""
+    import versioneer
     suffix = get_suffix()
-    version = open("VERSION").read().strip()
+    version = versioneer.get_version()
     print(f"Project version: {version}")
     print(f"Python being used: {PYTHONBIN}")
     print(f"Python extension suffix: {suffix}")
@@ -58,21 +64,14 @@ def dev_requirements(ctx):
     ctx.run(f"{PYTHONBIN} -m pip install -r requirements_dev.txt --user")
 
 
-@task(pre=[dev_requirements])
-def develop(ctx, uninstall=False):
-    """Start developing in developer mode."""
-    if uninstall:
-        ctx.run(f"{PYTHONBIN} setup.py develop --uninstall --user")
-    else:
-        ctx.run(f'{PYTHONBIN} setup.py develop --user')
-
-
 @task
 def clean(ctx):
-    """Clean out build and cache files. Remove extension modules."""
+    """Clean out build and cache files. Remove built extension modules."""
     ctx.run(f"{PYTHONBIN} setup.py clean")
     ctx.run(r"find . -depth -type d -name __pycache__ -exec rm -rf {} \;")
-    ctx.run('find ssh2 -name "*.so" -delete')
+    ctx.run('find ssh2 -name "*.so*" -delete')
+    if os.path.isdir("build"):
+        shutil.rmtree("build", ignore_errors=True)
     with ctx.cd("doc"):
         ctx.run(f"{PYTHONBIN} -m sphinx.cmd.build -M clean . _build")
 
@@ -111,8 +110,8 @@ def build_ext(ctx):
 
 
 @task(sdist)
-def bdist(ctx):
-    """Build a standard wheel file, an installable format, for manylinux target."""
+def wheels(ctx):
+    """Build standard wheel files, an installable format, for manylinux2014 platform."""
     cwd = os.getcwd()
     uid = os.getuid()
     gid = os.getgid()
@@ -123,12 +122,35 @@ def bdist(ctx):
     ctx.run(cmd)
 
 
-@task(bdist)
+@task
+def build_libssh2(ctx):
+    """Build the embedded libssh2 library."""
+    builddir = f"build/{LIBC}"
+    if not os.path.exists(builddir):
+        os.makedirs(builddir)
+    with ctx.cd(builddir):
+        ctx.run('cmake ../../libssh2 -DBUILD_SHARED_LIBS=ON '
+                '-DENABLE_ZLIB_COMPRESSION=ON -DENABLE_CRYPT_NONE=ON '
+                '-DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF '
+                '-DENABLE_MAC_NONE=ON -DCRYPTO_BACKEND=OpenSSL')
+        ctx.run('cmake --build . --config Release')
+    os.environ["LD_LIBRARY_PATH"] = os.path.join(os.path.abspath(builddir), "src")
+
+
+@task(pre=[build_libssh2, sdist])
+def bdist_native(ctx):
+    """Build native wheel file."""
+    cmd = f"{PYTHONBIN} setup.py bdist_wheel"
+    ctx.run(cmd)
+
+
+@task(pre=[wheels, bdist_native])
 def sign(ctx):
     """Cryptographically sign dist with your default GPG key."""
     if CURRENT_USER in SIGNERS:
-        distfiles = glob("wheelhouse/*.whl")
-        distfiles.extend(glob("dist/*.tar.gz"))
+        distfiles = glob("dist/*.tar.gz")
+        distfiles.extend(glob("dist/*.whl"))
+        distfiles.extend(glob("wheelhouse/*.whl"))
         for distfile in distfiles:
             ctx.run(f"{GPG} --detach-sign -a {distfile}")
     else:
@@ -136,16 +158,42 @@ def sign(ctx):
 
 
 @task(pre=[sign])
-def publish(ctx):
+def publish(ctx, wheels=False):
     """Publish built wheel files to package repo."""
-    token = get_repo_token()
-    distfiles = glob("wheelhouse/*.whl")
-    distfiles.extend(glob("dist/*.tar.gz"))
+    token = get_repo_token(REPO_HOST, REPO_USERNAME)
+    distfiles = glob("dist/*.tar.gz")  # source dist
+    # pypi.org only accepts manylinux wheel builds.
+    if "pypi.org" in REPOSITORY_URL:
+        distfiles.extend(glob("wheelhouse/*.whl"))
+    else:
+        # add native wheel for non-pypi repos, optionally all wheel builds.
+        distfiles.extend(glob("dist/*.whl"))
+        if wheels:
+            distfiles.extend(glob("wheelhouse/*.whl"))
+
     if not distfiles:
-        raise Exit("Nothing to publish folder!")
+        raise Exit("Nothing to publish!")
     distfiles = " ".join(distfiles)
     ctx.run(f'{PYTHONBIN} -m twine upload --repository-url \"{REPOSITORY_URL}\" '
             f'--username {REPO_USERNAME} --password {token} {distfiles}')
+
+
+@task(pre=[dev_requirements, build_libssh2])
+def develop(ctx):
+    """Start developing in developer mode.
+    That means setting import paths to use this workspace.
+    """
+    copy2(os.path.join(os.environ["LD_LIBRARY_PATH"], "libssh2.so.1.0.1"), "ssh2/libssh2.so.1")
+    ctx.run(f'{PYTHONBIN} setup.py develop --user')
+    for shared in glob("ssh2/*.so"):
+        ctx.run(f"patchelf --set-rpath '$ORIGIN' {shared}")
+
+
+@task(pre=[clean])
+def undevelop(ctx):
+    """Stop developing in developer mode.
+    """
+    ctx.run(f"{PYTHONBIN} setup.py develop --uninstall --user")
 
 
 @task
@@ -211,7 +259,7 @@ def branch_delete(ctx, name=None):
     """Delete local, remote and tracking branch by name."""
     if name:
         ctx.run(f"git branch -d {name}", warn=True)  # delete local branch
-        ctx.run(f"git branch -d -r {name}", warn=True)  # delete local tracking info
+        ctx.run(f"git branch -d -r origin/{name}", warn=True)  # delete local tracking info
         ctx.run(f"git push origin --delete {name}", warn=True)  # delete remote (origin) branch.
     else:
         print("Supply a branch name: --name <name>")
@@ -221,7 +269,7 @@ def branch_delete(ctx, name=None):
 def set_token(ctx):
     """Set the password in the local key ring for the pypi account used as the package repo.
     """
-    pw = getpass.getpass(f"token for account on {REPO_HOST}? ")
+    pw = getpass.getpass(f"token/password for account on {REPO_HOST} for user {REPO_USERNAME}? ")
     if pw:
         keyring.set_password(REPO_HOST, REPO_USERNAME, pw)
     else:
@@ -244,10 +292,10 @@ def get_tags():
     return vilist
 
 
-def get_repo_token():
-    cred = keyring.get_credential(REPO_HOST, REPO_USERNAME)
+def get_repo_token(host, username):
+    cred = keyring.get_credential(host, username)
     if not cred:
-        raise Exit("You must set the pypi token first with set-token target.", 1)
+        raise Exit(f"You must set the token for {REPO_HOST} first with the set-token task.", 1)
     return cred.password
 
 

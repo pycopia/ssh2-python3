@@ -1,11 +1,7 @@
-# python3
+# python3.6
 
-import platform
 import os
-import sys
 from glob import glob
-from subprocess import check_call
-from shutil import copy2
 
 import versioneer
 from setuptools import setup, find_packages
@@ -14,38 +10,10 @@ from Cython.Distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 
-def build_ssh2():
-    if not os.path.exists('build'):
-        os.mkdir('build')
-    if os.path.exists('build/Makefile'):
-        return
-    os.chdir('build')
-    try:
-        check_call('cmake ../libssh2 -DBUILD_SHARED_LIBS=ON \
-        -DENABLE_ZLIB_COMPRESSION=ON -DENABLE_CRYPT_NONE=ON \
-        -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF \
-        -DENABLE_MAC_NONE=ON -DCRYPTO_BACKEND=OpenSSL',
-                   shell=True, env=os.environ)
-        check_call('cmake --build . --config Release', shell=True, env=os.environ)
-    finally:
-        os.chdir('..')
-
-    for src in glob('build/src/libssh2.so*'):
-        copy2(src, 'ssh2/')
-
-
-# Only build libssh if running a build
-if (len(sys.argv) >= 2 and not (
-        '--help' in sys.argv[1:] or
-        sys.argv[1] in (
-            '--help-commands', 'egg_info', '--version', 'clean',
-            'sdist', '--long-description')) and
-        __name__ == '__main__'):
-    build_ssh2()
+LIBC = os.confstr('CS_GNU_LIBC_VERSION').replace(" ", "")
 
 sources = glob('ssh2/*.pyx')
-_arch = platform.architecture()[0][0:2]
-_libs = ['ssh2']
+_libs = ['ssh2', 'ssl', 'crypto', 'z']
 
 _fwd_default = 0
 _comp_args = ["-O3"]
@@ -69,22 +37,20 @@ cython_args = {
 }
 
 
-runtime_library_dirs = ["$ORIGIN/."]
-_lib_dir = os.path.abspath("./build/src")
+_lib_dir = os.path.abspath(f"./build/{LIBC}/src")
 include_dirs = ["libssh2/include"]
 
 extensions = [
-    Extension(sources[i].split('.')[0].replace(os.path.sep, '.'),
-              sources=[sources[i]],
+    Extension(pyx.split('.')[0].replace(os.path.sep, '.'),
+              sources=[pyx],
               include_dirs=include_dirs,
               libraries=_libs,
               library_dirs=[_lib_dir],
-              runtime_library_dirs=runtime_library_dirs,
               extra_compile_args=_comp_args,
               **cython_args)
-    for i in range(len(sources))]
+    for pyx in sources]
 
-package_data = {'ssh2': ['*.pxd', 'libssh2.so*']}
+package_data = {'ssh2': ['*.pxd']}
 
 cmdclass = versioneer.get_cmdclass()
 cmdclass['build_ext'] = build_ext
