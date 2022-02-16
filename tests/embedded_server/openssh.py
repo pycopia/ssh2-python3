@@ -57,9 +57,11 @@ class OpenSSHServer(object):
             sleep(.1)
         sock.close()
 
+    @classmethod
     def sign_key(cls, user):
+        os.chmod(f'{DIR_NAME}/ca', 0o600)
         cmd = ['ssh-keygen', '-s', f'{DIR_NAME}/ca', '-I', 'myidentity',
-               '-n', user, '-V', 'always:forever', '-z', '1', f'{PDIR_NAME}/signed_key_ecdsa.pub']
+               '-n', user, '-V', '+1w', '-z', '1', f'{PDIR_NAME}/signed_key_ecdsa.pub']
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def stop(self):
