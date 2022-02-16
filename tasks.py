@@ -22,6 +22,8 @@ from invoke import task, run, Exit
 # local environment
 LIBC = os.confstr('CS_GNU_LIBC_VERSION').replace(" ", "")
 
+LIBSSH2_REMOTE = "https://github.com/kdart/libssh2.git"
+
 # local user account name
 SIGNERS = ["keithdart", "keith"]
 CURRENT_USER = getpass.getuser()
@@ -135,6 +137,12 @@ def build_libssh2(ctx):
                 '-DENABLE_MAC_NONE=ON -DCRYPTO_BACKEND=OpenSSL')
         ctx.run('cmake --build . --config Release')
     os.environ["LD_LIBRARY_PATH"] = os.path.join(os.path.abspath(builddir), "src")
+
+
+@task
+def update_libssh2(ctx):
+    """Pull the latest libssh2 from origin."""
+    ctx.run(f'git subtree pull -P libssh2 "{LIBSSH2_REMOTE}" master --squash')
 
 
 @task(pre=[build_libssh2, sdist])

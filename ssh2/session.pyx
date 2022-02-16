@@ -178,8 +178,7 @@ cdef class Session:
         :rtype: int"""
         cdef int rc
         cdef bytes b_username = to_bytes(username)
-        cdef bytes b_publickey = to_bytes(publickey) \
-            if publickey is not None else None
+        cdef bytes b_publickey = to_bytes(publickey) if publickey is not None else None
         cdef bytes b_privatekey = to_bytes(privatekey)
         cdef bytes b_passphrase = to_bytes(passphrase)
         cdef char *_username = b_username
@@ -222,8 +221,7 @@ cdef class Session:
                                     passphrase=''):
         cdef int rc
         cdef bytes b_username = to_bytes(username)
-        cdef bytes b_publickey = to_bytes(publickey) \
-            if publickey is not None else None
+        cdef bytes b_publickey = to_bytes(publickey) if publickey is not None else None
         cdef bytes b_privatekey = to_bytes(privatekey)
         cdef bytes b_passphrase = to_bytes(passphrase)
         cdef bytes b_hostname = to_bytes(hostname)
@@ -251,9 +249,9 @@ cdef class Session:
         cdef char *_publickeyfiledata = NULL
         cdef char *_privatekeyfiledata = privatekeyfiledata
         cdef size_t username_len, pubkeydata_len, privatekeydata_len
-        username_len, pubkeydata_len, privatekeydata_len = \
-            len(b_username), len(publickeyfiledata), \
-            len(privatekeyfiledata)
+        username_len, pubkeydata_len, privatekeydata_len = (len(b_username),
+                                                            len(publickeyfiledata),
+                                                            len(privatekeyfiledata))
         if publickeyfiledata is not None:
             _publickeyfiledata = publickeyfiledata
         with nogil:

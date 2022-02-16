@@ -1,16 +1,15 @@
 import os
 import socket
-from unittest import skipUnless
 
 from .base_test import SSH2TestCase
-from ssh2.session import Session, LIBSSH2_HOSTKEY_HASH_MD5, \
-    LIBSSH2_HOSTKEY_HASH_SHA1
+from ssh2.session import Session, LIBSSH2_HOSTKEY_HASH_MD5, LIBSSH2_HOSTKEY_HASH_SHA1
 from ssh2.sftp import SFTP
 from ssh2.channel import Channel
 from ssh2.error_codes import LIBSSH2_ERROR_EAGAIN
-from ssh2.exceptions import AuthenticationError, AgentAuthenticationError, \
-    SCPProtocolError, RequestDeniedError, InvalidRequestError, \
-    SocketSendError, FileError, PublickeyUnverifiedError
+from ssh2.exceptions import (AuthenticationError, AgentAuthenticationError, SCPProtocolError,
+                             RequestDeniedError, InvalidRequestError, SocketSendError, FileError,
+                             PublickeyUnverifiedError)
+
 from ssh2.utils import wait_socket
 
 
@@ -18,14 +17,12 @@ class SessionTestCase(SSH2TestCase):
 
     def test_pubkey_auth(self):
         self.assertEqual(self.session.userauth_publickey_fromfile(
-            self.user, self.user_key, publickey=self.user_pub_key,
-            passphrase=''), 0)
+            self.user, self.user_key, publickey=self.user_pub_key, passphrase=''), 0)
 
     def test_failed_password_auth(self):
         self.assertRaises(
             AuthenticationError,
-            self.session.userauth_password, 'FAKE USER', 'FAKE PASSWORD'
-        )
+            self.session.userauth_password, 'FAKE USER', 'FAKE PASSWORD')
 
     def test_set_get_error(self):
         msg = b'my error message'
@@ -76,8 +73,6 @@ class SessionTestCase(SSH2TestCase):
                           self.user, 'EVEN MORE FAKE FILE',
                           publickey='FAKE FILE')
 
-    @skipUnless(hasattr(Session, 'scp_recv2'),
-                "Function not supported by libssh2")
     def test_scp_recv2(self):
         self.assertEqual(self._auth(), 0)
         test_data = b"data"
@@ -107,10 +102,8 @@ class SessionTestCase(SSH2TestCase):
     def test_scp_send(self):
         self.assertEqual(self._auth(), 0)
         test_data = b"data"
-        remote_filename = os.sep.join([os.path.dirname(__file__),
-                                       "remote_test_file"])
-        to_copy = os.sep.join([os.path.dirname(__file__),
-                               "copied"])
+        remote_filename = os.sep.join([os.path.dirname(__file__), "remote_test_file"])
+        to_copy = os.sep.join([os.path.dirname(__file__), "copied"])
         with open(remote_filename, 'wb') as fh:
             fh.write(test_data)
         fileinfo = os.stat(remote_filename)
@@ -133,18 +126,13 @@ class SessionTestCase(SSH2TestCase):
                 os.unlink(to_copy)
             except OSError:
                 pass
-        self.assertRaises(SCPProtocolError, self.session.scp_send,
-                          '/cannot_write', 1 & 777, 1)
+        self.assertRaises(SCPProtocolError, self.session.scp_send, '/cannot_write', 1 & 777, 1)
 
-    @skipUnless(hasattr(Session, 'scp_send64'),
-                "Function not supported by libssh2")
     def test_scp_send64(self):
         self.assertEqual(self._auth(), 0)
         test_data = b"data"
-        remote_filename = os.sep.join([os.path.dirname(__file__),
-                                       "remote_test_file"])
-        to_copy = os.sep.join([os.path.dirname(__file__),
-                               "copied"])
+        remote_filename = os.sep.join([os.path.dirname(__file__), "remote_test_file"])
+        to_copy = os.sep.join([os.path.dirname(__file__), "copied"])
         with open(remote_filename, 'wb') as fh:
             fh.write(test_data)
         fileinfo = os.stat(remote_filename)
@@ -158,10 +146,7 @@ class SessionTestCase(SSH2TestCase):
             chan.send_eof()
             chan.wait_eof()
             chan.wait_closed()
-            self.assertEqual(os.stat(to_copy).st_size,
-                             os.stat(remote_filename).st_size)
-        except Exception:
-            raise
+            self.assertEqual(os.stat(to_copy).st_size, os.stat(remote_filename).st_size)
         finally:
             os.unlink(remote_filename)
             try:
@@ -169,7 +154,7 @@ class SessionTestCase(SSH2TestCase):
             except OSError:
                 pass
         self.assertRaises(SCPProtocolError, self.session.scp_send64,
-                          '/cannot_write', 0 & 777, 1, 1, 1)
+                          '/cannot_write', 0o777, 1, 1, 1)
 
     def test_non_blocking(self):
         self.assertEqual(self._auth(), 0)
@@ -214,8 +199,7 @@ class SessionTestCase(SSH2TestCase):
 
     def test_direct_tcpip_failure(self):
         self.sock.close()
-        self.assertRaises(SocketSendError, self.session.direct_tcpip,
-                          'localhost', 80)
+        self.assertRaises(SocketSendError, self.session.direct_tcpip, 'localhost', 80)
 
     def test_keepalive(self):
         self.session.keepalive_config(False, 60)
