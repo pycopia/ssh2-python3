@@ -100,18 +100,12 @@ cdef object PyAgent(c_ssh2.LIBSSH2_AGENT *agent, Session session):
 cdef class Agent:
 
     def __cinit__(self, Session session):
-        self._agent = NULL
+        self._agent = agent_init(session._session)
         self._session = session
 
     def __dealloc__(self):
         with nogil:
             clear_agent(self._agent)
-
-    def list_identities(self):
-        """This method is a no-op - use
-        :py:func:`ssh2.agent.Agent.get_identities()` to list and retrieve
-        identities."""
-        pass
 
     def get_identities(self):
         """List and get identities from agent
@@ -146,12 +140,9 @@ cdef class Agent:
         cdef int rc
         cdef bytes b_username = to_bytes(username)
         cdef char *_username = b_username
-        cdef c_ssh2.libssh2_agent_publickey *c_pkey = NULL
 
-        # Pull C key to local reference to avoid Python object access without GIL, below.
-        c_pkey = pkey._pkey
         with nogil:
-            rc = c_ssh2.libssh2_agent_userauth(self._agent, _username, c_pkey)
+            rc = c_ssh2.libssh2_agent_userauth(self._agent, _username, pkey._pkey)
             if rc != 0 and rc != c_ssh2.LIBSSH2_ERROR_EAGAIN:
                 with gil:
                     raise AgentAuthenticationError(
