@@ -113,14 +113,14 @@ def build_ext(ctx):
 
 @task(sdist)
 def wheels(ctx):
-    """Build standard wheel files, an installable format, for manylinux2014 platform."""
+    """Build standard wheel files, an installable format, for manylinux_2_27_x86_64 platform."""
     cwd = os.getcwd()
     uid = os.getuid()
     gid = os.getgid()
-    cmd = (f'docker run -e PLAT=manylinux2014_x86_64 '
+    cmd = (f'docker run -it -e PLAT=manylinux_2_27_x86_64 '
            f'-e USER_ID={uid} -e GROUP_ID={gid} '
-           f'--mount type=bind,src={cwd},dst=/io '
-           f'quay.io/pypa/manylinux2014_x86_64 bash /io/building/build-wheels.sh')
+           f'--mount type=bind,source={cwd},target=/io '
+           f'wheel_builder /io/building/build-wheels.sh')
     ctx.run(cmd)
 
 

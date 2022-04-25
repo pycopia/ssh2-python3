@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# build script for manylinux builder on quay.io/pypa/manylinux2014_x86_64
+# build script for building manylinux wheels.
 
 
 set -e -u -x
@@ -10,14 +10,12 @@ set -e -u -x
 groupadd --gid $GROUP_ID builder
 useradd --no-create-home --comment 'Builder' --uid $USER_ID --gid $GROUP_ID builder
 
+apt install -y libssl-dev
+apt install -y zlib1g-dev
+
 export PYTHONDONTWRITEBYTECODE=1
 
-# Install a system package required by our library
-yum install -y zlib-devel
-yum install -y openssl-devel
-
 LIBC=$(getconf GNU_LIBC_VERSION | tr -d ' ')
-
 
 BUILDDIR="/io/build/${LIBC}"
 
@@ -37,15 +35,15 @@ su builder -c "cmake --build . --config Release"
 popd
 
 # So that loader and auditwheel can find libssh2
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BUILDDIR}/src
+export LD_LIBRARY_PATH=${BUILDDIR}/src
 
-declare -a PYS=(cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39)
+
+declare -a PYTHONS=(cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310)
 
 pushd /io
 
-for PY in ${PYS[@]} ; do
+for PY in ${PYTHONS[@]} ; do
     PYBIN=/opt/python/${PY}/bin
-    "${PYBIN}/pip" install -U pip setuptools auditwheel
     "${PYBIN}/pip" install -r requirements_dev.txt
     su builder -c "\"${PYBIN}/python\" setup.py bdist_wheel --plat-name $PLAT"
     whl=$(echo dist/*-${PY}-${PLAT}.whl)
