@@ -272,8 +272,8 @@ typedef off_t libssh2_struct_stat_size;
 
 typedef struct _LIBSSH2_USERAUTH_KBDINT_PROMPT
 {
-    char *text;
-    unsigned int length;
+    unsigned char *text;
+    size_t length;
     unsigned char echo;
 } LIBSSH2_USERAUTH_KBDINT_PROMPT;
 
@@ -801,6 +801,12 @@ LIBSSH2_API int libssh2_channel_x11_req_ex(LIBSSH2_CHANNEL *channel,
                                            int screen_number);
 #define libssh2_channel_x11_req(channel, screen_number) \
  libssh2_channel_x11_req_ex((channel), 0, NULL, NULL, (screen_number))
+
+LIBSSH2_API int libssh2_channel_signal_ex(LIBSSH2_CHANNEL *channel,
+                                          const char *signame,
+                                          unsigned int signame_len);
+#define libssh2_channel_signal(channel, signame) \
+ libssh2_channel_signal_ex((channel), signame, (unsigned int)strlen(signame))
 
 LIBSSH2_API int libssh2_channel_process_startup(LIBSSH2_CHANNEL *channel,
                                                 const char *request,
