@@ -9,9 +9,10 @@ set -e -u -x
 # add builder user and su to build to avoid creating root-owned files in host side.
 groupadd --gid $GROUP_ID builder
 useradd --no-create-home --comment 'Builder' --uid $USER_ID --gid $GROUP_ID builder
+git config --global --add safe.directory /io
 
-apt install -y libssl-dev
-apt install -y zlib1g-dev
+# apt install -y libssl-dev
+# apt install -y zlib1g-dev
 
 export PYTHONDONTWRITEBYTECODE=1
 
@@ -45,6 +46,7 @@ pushd /io
 for PY in ${PYTHONS[@]} ; do
     PYBIN=/opt/python/${PY}/bin
     "${PYBIN}/pip" install -r requirements_dev.txt
+    rm -f ssh2/*.c
     su builder -c "\"${PYBIN}/python\" setup.py bdist_wheel --plat-name $PLAT"
     whl=$(echo dist/*-${PY}-${PLAT}.whl)
     su builder -c "\"${PYBIN}/python\" -m auditwheel repair --plat \"$PLAT\" --wheel-dir /io/wheelhouse/ \"$whl\""

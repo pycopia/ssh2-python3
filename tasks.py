@@ -45,9 +45,8 @@ REPO_USERNAME = os.environ.get("PYPI_REPO_USERNAME", "__token__")
 @task
 def info(ctx):
     """Show information about the current Python and environment."""
-    import versioneer
     suffix = get_suffix()
-    version = versioneer.get_version()
+    version = ctx.run(f"{PYTHONBIN} setup.py --version", hide="out").stdout.strip()
     print(f"Project version: {version}")
     print(f"Python being used: {PYTHONBIN}")
     print(f"Python extension suffix: {suffix}")
@@ -63,7 +62,8 @@ def build(ctx):
 @task
 def dev_requirements(ctx):
     """Install development requirements."""
-    ctx.run(f"{PYTHONBIN} -m pip install -r requirements_dev.txt --user")
+    user = "" if os.environ.get("VIRTUAL_ENV") else "--user"
+    ctx.run(f"{PYTHONBIN} -m pip install -r requirements_dev.txt {user}")
 
 
 @task
@@ -121,7 +121,7 @@ def wheels(ctx):
            f'-e USER_ID={uid} -e GROUP_ID={gid} '
            f'--mount type=bind,source={cwd},target=/io '
            f'wheel_builder /io/building/build-wheels.sh')
-    ctx.run(cmd)
+    ctx.run(cmd, hide=False, pty=True)
 
 
 @task
@@ -187,14 +187,18 @@ def publish(ctx, wheels=False):
 
 
 @task(pre=[dev_requirements, build_libssh2])
-def develop(ctx):
+def develop(ctx, uninstall=False):
     """Start developing in developer mode.
     That means setting import paths to use this workspace.
     """
-    copy2(os.path.join(os.environ["LD_LIBRARY_PATH"], "libssh2.so.1.0.1"), "ssh2/libssh2.so.1")
-    ctx.run(f'{PYTHONBIN} setup.py develop --user')
-    for shared in glob("ssh2/*.so"):
-        ctx.run(f"patchelf --set-rpath '$ORIGIN' {shared}")
+    user = "" if os.environ.get("VIRTUAL_ENV") else "--user"
+    if uninstall:
+        ctx.run(f"{PYTHONBIN} setup.py develop --uninstall {user}")
+    else:
+        copy2(os.path.join(os.environ["LD_LIBRARY_PATH"], "libssh2.so.1.0.1"), "ssh2/libssh2.so.1")
+        ctx.run(f'{PYTHONBIN} setup.py develop {user}')
+        for shared in glob("ssh2/*.so"):
+            ctx.run(f"patchelf --set-rpath '$ORIGIN' {shared}")
 
 
 @task(pre=[clean])
