@@ -66,7 +66,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     tests_require=['pytest'],
-    python_requires='~=3.6',
+    python_requires='~=3.8',
     license='LGPLv2',
     author='Panos Kittenis',
     author_email='22e889d8@opayq.com',
