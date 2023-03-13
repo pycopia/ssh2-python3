@@ -2,5 +2,5 @@ Cython
 flake8
 jinja2
 sphinx
-sphinx_rtd_theme
 pytest
+setuptools_scm

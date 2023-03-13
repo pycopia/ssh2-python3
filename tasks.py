@@ -45,9 +45,8 @@ REPO_USERNAME = os.environ.get("PYPI_REPO_USERNAME", "__token__")
 @task
 def info(ctx):
     """Show information about the current Python and environment."""
-    import versioneer
     suffix = get_suffix()
-    version = versioneer.get_version()
+    version = ctx.run(f"{PYTHONBIN} setup.py --version", hide="out").stdout.strip()
     print(f"Project version: {version}")
     print(f"Python being used: {PYTHONBIN}")
     print(f"Python extension suffix: {suffix}")
@@ -121,7 +120,7 @@ def wheels(ctx):
            f'-e USER_ID={uid} -e GROUP_ID={gid} '
            f'--mount type=bind,source={cwd},target=/io '
            f'wheel_builder /io/building/build-wheels.sh')
-    ctx.run(cmd)
+    ctx.run(cmd, hide=False, pty=True)
 
 
 @task

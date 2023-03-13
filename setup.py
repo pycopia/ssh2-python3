@@ -3,7 +3,6 @@
 import os
 from glob import glob
 
-import versioneer
 from setuptools import setup, find_packages
 
 from Cython.Distutils.extension import Extension
@@ -52,13 +51,11 @@ extensions = [
 
 package_data = {'ssh2': ['*.pxd']}
 
-cmdclass = versioneer.get_cmdclass()
-cmdclass['build_ext'] = build_ext
 
 setup(
     name='ssh2-python3',
-    version=versioneer.get_version(),
-    cmdclass=cmdclass,
+    version="1.0",  # not used when setuptools_scm is used.
+    cmdclass={"build_ext": build_ext},
     packages=find_packages(
         '.', exclude=('embedded_server', 'embedded_server.*',
                       'tests', 'tests.*',
@@ -66,6 +63,8 @@ setup(
     zip_safe=False,
     include_package_data=True,
     tests_require=['pytest'],
+    setup_requires=['setuptools_scm'],
+    use_scm_version=True,
     python_requires='~=3.8',
     license='LGPLv2',
     author='Panos Kittenis',
