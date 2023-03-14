@@ -62,7 +62,8 @@ def build(ctx):
 @task
 def dev_requirements(ctx):
     """Install development requirements."""
-    ctx.run(f"{PYTHONBIN} -m pip install -r requirements_dev.txt --user")
+    user = "" if os.environ.get("VIRTUAL_ENV") else "--user"
+    ctx.run(f"{PYTHONBIN} -m pip install -r requirements_dev.txt {user}")
 
 
 @task
@@ -186,14 +187,18 @@ def publish(ctx, wheels=False):
 
 
 @task(pre=[dev_requirements, build_libssh2])
-def develop(ctx):
+def develop(ctx, uninstall=False):
     """Start developing in developer mode.
     That means setting import paths to use this workspace.
     """
-    copy2(os.path.join(os.environ["LD_LIBRARY_PATH"], "libssh2.so.1.0.1"), "ssh2/libssh2.so.1")
-    ctx.run(f'{PYTHONBIN} setup.py develop --user')
-    for shared in glob("ssh2/*.so"):
-        ctx.run(f"patchelf --set-rpath '$ORIGIN' {shared}")
+    user = "" if os.environ.get("VIRTUAL_ENV") else "--user"
+    if uninstall:
+        ctx.run(f"{PYTHONBIN} setup.py develop --uninstall {user}")
+    else:
+        copy2(os.path.join(os.environ["LD_LIBRARY_PATH"], "libssh2.so.1.0.1"), "ssh2/libssh2.so.1")
+        ctx.run(f'{PYTHONBIN} setup.py develop {user}')
+        for shared in glob("ssh2/*.so"):
+            ctx.run(f"patchelf --set-rpath '$ORIGIN' {shared}")
 
 
 @task(pre=[clean])
