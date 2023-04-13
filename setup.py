@@ -65,7 +65,7 @@ setup(
     tests_require=['pytest'],
     setup_requires=['setuptools_scm'],
     use_scm_version=True,
-    python_requires='~=3.8',
+    python_requires='>=3.8',
     license='LGPLv2',
     author='Panos Kittenis',
     author_email='22e889d8@opayq.com',
