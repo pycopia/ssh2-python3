@@ -4,7 +4,7 @@ build_backend = "setuptools.build_meta"
 
 
 [project]
-name="ssh2-python3",
+name="ssh2-python3"
 dynamic = ["version", "dependencies", "scripts"]
 description = "Super fast SSH library - bindings for libssh2 and Python 3"
 readme = "README.md"
@@ -13,14 +13,12 @@ license-files = ["LICENSE"]
 authors = [{name = "Panos Kittenis", email = "22e889d8@opayq.com"}]
 maintainers = [{name = "Keith Dart", email = "keith.dart@gmail.com"}]
 requires-python = ">=3.10"
-platforms = ["linux_x86_64", "manylinux_2_35_x86_64"]
 keywords = ["ssh"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: Implementation :: CPython",
-    "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
     "Intended Audience :: Developers",
     "Topic :: System :: Networking",
     "Topic :: Software Development :: Libraries",
