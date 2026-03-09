@@ -1,4 +1,3 @@
-# python3.6
 
 import os
 from glob import glob
@@ -9,7 +8,9 @@ from Cython.Distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 
-LIBC = os.confstr('CS_GNU_LIBC_VERSION').replace(" ", "")
+LIBC = os.confstr('CS_GNU_LIBC_VERSION')
+assert LIBC is not None
+LIBC = LIBC.replace(" ", "")
 
 sources = glob('ssh2/*.pyx')
 _libs = ['ssh2', 'ssl', 'crypto', 'z']
@@ -54,7 +55,6 @@ package_data = {'ssh2': ['*.pxd']}
 
 setup(
     name='ssh2-python3',
-    version="1.0",  # not used when setuptools_scm is used.
     cmdclass={"build_ext": build_ext},
     packages=find_packages(
         '.', exclude=('embedded_server', 'embedded_server.*',
@@ -65,38 +65,7 @@ setup(
     tests_require=['pytest'],
     setup_requires=['setuptools_scm'],
     use_scm_version=True,
-    python_requires='>=3.8',
-    license='LGPLv2',
-    author='Panos Kittenis',
-    author_email='22e889d8@opayq.com',
-    maintainer='Keith Dart',
-    maintainer_email='keith.dart@gmail.com',
-    description='Super fast SSH library - bindings for libssh2 and Python 3',
-    long_description=open('README.md').read(),
-    long_description_content_type="text/markdown",
-    url='https://github.com/pycopia/ssh2-python3',
-    platforms=['linux_x86_64', 'manylinux2014_x86_64 '],
-    classifiers=[
-        'Development Status :: 5 - Production/Stable',
-        'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)',
-        'Intended Audience :: Developers',
-        'Operating System :: OS Independent',
-        'Programming Language :: C',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
-        "Programming Language :: Python :: 3 :: Only",
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Topic :: System :: Shells',
-        'Topic :: System :: Networking',
-        'Topic :: Software Development :: Libraries',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Operating System :: POSIX',
-        'Operating System :: POSIX :: Linux',
-        'Operating System :: POSIX :: BSD',
-    ],
+    platforms=['linux_x86_64', 'manylinux_2_35_x86_64'],
     ext_modules=extensions,
     package_data=package_data,
 )

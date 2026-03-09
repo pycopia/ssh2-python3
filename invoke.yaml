@@ -1,0 +1,13 @@
+# Configuration for invoke tool. Available as `ctx.config`.
+pypi:
+    host: "upload.pypi.org"
+    url: "https://{host}/legacy/"
+    username: "__token__"
+    index: "{url}simple"
+
+programs: {}
+
+python:
+    wheel:
+        platform: "manylinux_2_35_x86_64"
+    version: null

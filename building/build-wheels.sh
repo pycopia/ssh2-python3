@@ -1,18 +1,20 @@
 #!/bin/bash
 
-# build script for building manylinux wheels.
+# build script for building manylinux wheels. Runs in a docker container.
 
 
 set -e -u -x
 
+# apt update -y
+# apt upgrade -y
+# apt install -y git python3-pip
+# apt install -y libssl-dev
+# apt install -y zlib1g-dev
 
 # add builder user and su to build to avoid creating root-owned files in host side.
 groupadd --gid $GROUP_ID builder
 useradd --no-create-home --comment 'Builder' --uid $USER_ID --gid $GROUP_ID builder
 git config --global --add safe.directory /io
-
-# apt install -y libssl-dev
-# apt install -y zlib1g-dev
 
 export PYTHONDONTWRITEBYTECODE=1
 
@@ -39,17 +41,17 @@ popd
 export LD_LIBRARY_PATH=${BUILDDIR}/src
 
 
-declare -a PYTHONS=(cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310 cp311-cp311)
+declare -a PYTHONS=(cp310-cp310 cp311-cp311 cp312-cp312 cp313-cp313 cp314-cp314 )
 
 pushd /io
 
 for PY in ${PYTHONS[@]} ; do
     PYBIN=/opt/python/${PY}/bin
-    "${PYBIN}/pip" install -r requirements_dev.txt
+    "${PYBIN}/pip3" install -U -r requirements_dev.txt
     rm -f ssh2/*.c
-    su builder -c "\"${PYBIN}/python\" setup.py bdist_wheel --plat-name $PLAT"
+    su builder -c "\"${PYBIN}/python3\" setup.py bdist_wheel --plat-name $PLAT"
     whl=$(echo dist/*-${PY}-${PLAT}.whl)
-    su builder -c "\"${PYBIN}/python\" -m auditwheel repair --plat \"$PLAT\" --wheel-dir /io/wheelhouse/ \"$whl\""
+    su builder -c "\"${PYBIN}/python3\" -m auditwheel repair --plat \"$PLAT\" --wheel-dir /io/wheelhouse/ \"$whl\""
 done
 
 popd

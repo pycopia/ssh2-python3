@@ -1,12 +1,10 @@
-#!/usr/bin/env python3.8
+#!/usr/bin/env python3
 """Tasks file used by the *invoke* command.
 
 This simplifies some common development tasks.
 
 Run these tasks with the `invoke` tool.
 """
-
-from __future__ import annotations
 
 import sys
 import os
@@ -94,9 +92,9 @@ def test(ctx, testfile=None, ls=False):
     if ls:
         ctx.run(f"{PYTHONBIN} -m pytest --collect-only -qq tests")
     elif testfile:
-        ctx.run(f"{PYTHONBIN} -m pytest -s {testfile}")
+        ctx.run(f"{PYTHONBIN} -m pytest -s {testfile}", hide=False, pty=True)
     else:
-        ctx.run(f"{PYTHONBIN} -m pytest tests", hide=False, in_stream=False)
+        ctx.run(f"{PYTHONBIN} -m pytest tests", hide=False, pty=True, in_stream=False)
 
 
 @task(cleandist)
@@ -113,15 +111,19 @@ def build_ext(ctx):
 
 @task(sdist)
 def wheels(ctx):
-    """Build standard wheel files, an installable format, for manylinux_2_27_x86_64 platform."""
+    """Build standard wheel files, an installable format, for a manylinux platform."""
+    platform = ctx.config.python.wheel.platform
+    if not platform:
+        raise Exit("No platform found in config.")
     cwd = os.getcwd()
     uid = os.getuid()
     gid = os.getgid()
-    cmd = (f'docker run -it -e PLAT=manylinux_2_27_x86_64 '
+    cmd = (f'docker run -it -e PLAT={platform} '
            f'-e USER_ID={uid} -e GROUP_ID={gid} '
            f'--mount type=bind,source={cwd},target=/io '
-           f'wheel_builder /io/building/build-wheels.sh')
+           f'wheel_builder:{platform} /io/building/build-wheels.sh')
     ctx.run(cmd, hide=False, pty=True)
+    print(f"Built wheels for {platform=}")
 
 
 @task
@@ -196,7 +198,7 @@ def develop(ctx, uninstall=False):
         ctx.run(f"{PYTHONBIN} setup.py develop --uninstall {user}")
     else:
         copy2(os.path.join(os.environ["LD_LIBRARY_PATH"], "libssh2.so.1.0.1"), "ssh2/libssh2.so.1")
-        ctx.run(f'{PYTHONBIN} setup.py develop {user}')
+        ctx.run(f"{PYTHONBIN} -m pip --isolated install {user} --editable .", hide=False, pty=True, in_stream=False)
         for shared in glob("ssh2/*.so"):
             ctx.run(f"patchelf --set-rpath '$ORIGIN' {shared}")
 

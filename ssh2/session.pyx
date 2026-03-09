@@ -50,13 +50,13 @@ IF EMBEDDED_LIB:
     LIBSSH2_HOSTKEY_TYPE_ED25519 = c_ssh2.LIBSSH2_HOSTKEY_TYPE_ED25519
 
 
-cdef void *PySSH2_Malloc(size_t count, void **abstract) nogil:
+cdef void *PySSH2_Malloc(size_t count, void **abstract) noexcept nogil:
     return PyMem_RawMalloc(count)
 
-cdef void *PySSH2_Realloc(void *ptr, size_t count, void **abstract) nogil:
+cdef void *PySSH2_Realloc(void *ptr, size_t count, void **abstract) noexcept nogil:
     return PyMem_RawRealloc(ptr, count)
 
-cdef void PySSH2_Free(void *ptr, void **abstract) nogil:
+cdef void PySSH2_Free(void *ptr, void **abstract) noexcept nogil:
     PyMem_RawFree(ptr)
 
 
