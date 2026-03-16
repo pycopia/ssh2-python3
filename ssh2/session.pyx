@@ -106,6 +106,32 @@ cdef class Session:
         rc = c_ssh2.libssh2_session_startup(self._session, _sock)
         return handle_error_codes(rc)
 
+    def banner_set(self, banner not None):
+        """Set the session SSH protocol banner for the local client 
+        :param banner: banner to set for the local client
+        :type banner: str
+
+        :rtype: int"""
+        cdef bytes b_banner = to_bytes(banner)
+        cdef char *_banner = b_banner
+        cdef int rc
+        with nogil:
+            rc = c_ssh2.libssh2_session_banner_set(self._session, _banner)
+        return handle_error_codes(rc)
+
+    def banner_get(self):
+        """Get the session SSH protocol banner for the remote server
+
+        :rtype: str or None"""
+        cdef char *_banner
+        cdef str banner
+        with nogil:
+            _banner = c_ssh2.libssh2_session_banner_get(self._session)
+        if _banner is NULL:
+            return
+        return to_str(_banner)
+
+
     def set_blocking(self, bint blocking):
         """Set session blocking mode on/off.
 

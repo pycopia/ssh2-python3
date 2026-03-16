@@ -8,7 +8,7 @@ from ssh2.channel import Channel
 from ssh2.error_codes import LIBSSH2_ERROR_EAGAIN
 from ssh2.exceptions import (AuthenticationError, AgentAuthenticationError, SCPProtocolError,
                              RequestDeniedError, InvalidRequestError, SocketSendError, FileError,
-                             PublickeyUnverifiedError)
+                             PublickeyUnverifiedError, SSH2Error)
 
 from ssh2.utils import wait_socket
 
@@ -59,6 +59,22 @@ class SessionTestCase(SSH2TestCase):
         self.session.set_blocking(1)
         self.assertEqual(self.session.get_blocking(), 1)
 
+    def test_invalid_banner_set(self):
+        """
+        Reset session as base_test.py calls handshake
+        """
+        self.session.disconnect()
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((self.host, self.port))
+
+        self.sock = sock
+        self.session = Session()
+
+        self.session.banner_set("Python3")
+
+        self.assertRaises(SSH2Error, self.session.handshake, self.sock)
+        
     def test_failed_agent_auth(self):
         self.assertRaises(AgentAuthenticationError,
                           self.session.agent_auth, 'FAKE USER')
